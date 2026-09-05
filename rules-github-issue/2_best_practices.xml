@@ -1,0 +1,79 @@
+<best_practices>
+  <general_principles>
+    <principle priority="high">
+      <name>Internal-Only Acceptance Criteria</name>
+      <description>Acceptance criteria are strictly private internal checklists for Roo to evaluate fix correctness. They must never be included in GitHub issues or public artifacts.</description>
+      <rationale>Keeps public issues clean for third parties while giving Roo precise validation criteria.</rationale>
+    </principle>
+    <principle priority="high">
+      <name>Conditional Issue Assignment</name>
+      <description>Only assign the stakeholder (STAKEHOLDER_USERNAME resolved via user.email) to an issue if it will remain open without an immediate automated fix. Do not assign if the issue is being fixed immediately in the active session.</description>
+      <rationale>Prevents notification noise for issues that are immediately resolved via PR automation.</rationale>
+    </principle>
+    <principle priority="high">
+      <name>Mandatory User Confirmation Gates & Sub-Mode Restrictions</name>
+      <description>Always pause and ask the user before attempting a fix and before committing, pushing, or opening PRs (Hard Stop Gate #3). Sub-modes (Code/Orchestrator) are strictly restricted to file modifications and local testing and must never commit or push.</description>
+      <rationale>Ensures human-in-the-loop control over code modifications and repo lifecycle.</rationale>
+    </principle>
+    <principle priority="high">
+      <name>Mandatory Post-Merge Cleanup (Phase 6)</name>
+      <description>Task completion is strictly invalid until the local workspace is returned to main (<code>git checkout main && git pull</code>) and remote feature branches are cleaned up.</description>
+      <rationale>Prevents stale local/remote branches and keeps the workspace clean for subsequent tasks.</rationale>
+    </principle>
+    <principle priority="high">
+      <name>Native PR Automated Closure</name>
+      <description>NEVER call APIs or tools to manually close an issue. Rely entirely on PR descriptions with plain-text references (`Fixes #X`) merging into default branches.</description>
+      <rationale>Ensures audit trail integrity and leverages native GitHub automation.</rationale>
+    </principle>
+  </general_principles>
+  
+  <code_conventions>
+    <convention category="branch_naming">
+      <rule>Branch names MUST strictly follow the exact pattern <code>issue-{number}-{short-slug}</code>. Standalone issue numbers (e.g., <code>issue-7</code>) or custom prefixes (e.g., <code>fix-issue-5</code>, <code>feature/issue-5</code>, or <code>bugfix-5</code>) are strictly prohibited. A descriptive slug is mandatory (e.g., <code>issue-5-async-await-fix</code>, <code>issue-7-connection-leak-fix</code>).</rule>
+      <examples>
+        <good>issue-5-async-await-fix</good>
+        <good>issue-7-connection-leak-fix</good>
+        <bad>issue-7</bad>
+        <bad>fix-issue-5</bad>
+        <bad>fix/issue-105</bad>
+      </examples>
+    </convention>
+    
+    <convention category="commit_and_pr_messages">
+      <rule>Include plain-text issue references in commit titles, commit bodies, and PR descriptions. Never format references as Markdown links.</rule>
+      <examples>
+        <good>Fixes #42</good>
+        <good>Resolves #3</good>
+        <bad>[#42](https://github.com/owner/repo/issues/42)</bad>
+        <bad>Fixes #42</bad>
+      </examples>
+    </convention>
+  </code_conventions>
+  
+  <quality_checklist>
+    <category name="before_issue_creation">
+      <item>Check for duplicate open or closed issues</item>
+      <item>Resolve STAKEHOLDER_USERNAME via git config user.email</item>
+      <item>Verify acceptance criteria are excluded from public issue markdown</item>
+      <item>Get explicit user confirmation on the drafted issue Markdown BEFORE creating the issue on GitHub.</item>
+    </category>
+    <category name="before_fixing">
+      <item>Ask user explicitly if we should attempt a fix</item>
+      <item>If user declines fix, assign STAKEHOLDER_USERNAME to the open issue</item>
+      <item>Ensure fix is developed on a dedicated <code>issue-{number}-{short-slug}</code> branch (standalone numbers prohibited)</item>
+    </category>
+    <category name="before_pr_creation">
+      <item>Verify branch name matches exact syntax <code>issue-{number}-{short-slug}</code>.</item>
+      <item>Ensure sub-mode (Code/Orchestrator) only modified files and ran tests without committing or pushing.</item>
+      <item>Get explicit user confirmation (Hard Stop Gate #3) on git diff and test output BEFORE executing <code>git commit</code>, <code>git push</code>, or creating the PR.</item>
+      <item>Ensure commit and PR body use raw plain-text <code>Fixes #{number}</code> references</item>
+      <item>Verify NO manual issue closure API calls are made</item>
+    </category>
+    <category name="after_pr_creation">
+      <item>Check CAN_MERGE flag before offering to merge the Pull Request.</item>
+      <item>Do NOT attempt to execute PR merges if the authenticated user lacks write/admin repository privileges.</item>
+      <item>Execute Phase 6 post-merge cleanup: return local workspace to main via <code>git checkout main && git pull</code> and delete remote feature branch upon merge.</item>
+      <item>Task completion is strictly invalid until local workspace restoration and remote branch cleanup are fully performed.</item>
+    </category>
+  </quality_checklist>
+</best_practices>
