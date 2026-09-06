@@ -5,21 +5,24 @@ import shutil
 def batch_convert_xml_script_dir():
     # Get the absolute path of the directory where this script lives
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Get the parent directory of where the script lives
+    parent_dir = os.path.dirname(script_dir)
     
-    # Define the target subdirectory relative to the script
-    target_dir = os.path.join(script_dir, "txt")
+    # Define the target subdirectory relative to the parent directory
+    target_dir = os.path.join(parent_dir, "txt")
+    target_dir = f"{target_dir}"
     
     # Create the directory if it does not exist
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
         print(f"Created subdirectory: '{target_dir}/'")
         
-    # Find all .xml files in the script's directory
-    search_path = os.path.join(script_dir, "*.xml")
+    # Find all .xml files in the parent directory
+    search_path = os.path.join(parent_dir, "*.xml")
     xml_files = glob.glob(search_path)
     
     if not xml_files:
-        print(f"No .xml files found in the script directory: {script_dir}")
+        print(f"No .xml files found in the parent directory: {parent_dir}")
         return
 
     for xml_path in xml_files:
