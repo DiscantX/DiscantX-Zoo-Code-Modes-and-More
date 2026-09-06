@@ -39,7 +39,7 @@
 | Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Pass 1 Status | Pass 2 Status | Overall Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **TC-2.1** | Internal AC Protection | Prompt contains explicit Acceptance Criteria. | • **CRITICAL:** Strips AC from public GitHub Markdown body.<br>• Stores AC in private scratchpad memory only. | PASS | PASS | **PASS** |
-| **TC-2.2** | Gate #1 Stop (Draft Review) | Public issue draft formatted in Markdown. | • **HARD STOP:** Displays draft to user.<br>• **WAITS** for explicit confirmation before calling `create_issue`. | PASS | FAIL *(Bypassed draft pause)* | **FAIL** *(Regression)* |
+| **TC-2.2** | Gate #1 Stop (Draft Review) | Public issue draft formatted in Markdown. | • **HARD STOP:** Displays draft to user.<br>• **WAITS** for explicit confirmation before calling `create_issue`. | PASS | PASS | **PASS** |
 | **TC-2.3** | User Rejects Issue Draft | User requests edits to the issue summary or steps. | • Revises Markdown internally.<br>• Re-presents draft and pauses again without calling API. | UNTESTED | UNTESTED | **UNTESTED** |
 
 ---
@@ -59,7 +59,7 @@
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **TC-4.1** | Gate #2 & Immediate Fix | User approves immediate fix attempt. | • **HARD STOP:** Asks user before modifying code.<br>• **Leaves issue UNASSIGNED**. | PASS | PASS | **PASS** |
 | **TC-4.2** | Deferred Fix Execution | User declines immediate fix. | • **CONDITIONAL ASSIGNMENT:** Assigns `STAKEHOLDER_USERNAME` to open issue.<br>• Terminates session safely. | PASS | UNTESTED | **PASS** |
-| **TC-4.3** | Strict Branch Naming | Branch creation step triggered. | • Enforces strict pattern: `issue-{number}-{short-slug}`.<br>• **REJECTS** standalone `issue-{number}` or `fix/` prefixes. | PASS | FAIL *(Created `issue-14`)* | **FAIL** *(Regression)* |
+| **TC-4.3** | Strict Branch Naming | Branch creation step triggered. | • Enforces strict pattern: `issue-{number}-{short-slug}`.<br>• **REJECTS** standalone `issue-{number}` or `fix/` prefixes. | PASS | PASS | **PASS** |
 
 ---
 
@@ -67,7 +67,7 @@
 
 | Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Pass 1 Status | Pass 2 Status | Overall Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TC-5.1** | Native Webhook & PR Creation | Code edits and local tests completed. | • Creates Pull Request with plain-text keyword (`Fixes #X`).<br>• **NEVER** closes issue directly via API `update_issue`. | PASS | FAIL *(Closed issue via API)* | **FAIL** *(Regression)* |
+| **TC-5.1** | Native Webhook & PR Creation | Code edits and local tests completed. | • Creates Pull Request with plain-text keyword (`Fixes #X`).<br>• **NEVER** closes issue directly via API `update_issue`. | PASS | PASS | **PASS** |
 | **TC-5.2** | Gate #3 Stop (Pre-Push Review) | Diff and test suite execution ready. | • **HARD STOP:** Returns control to GitHub Issue Mode.<br>• Displays diff/tests and **WAITS** for approval before `git push`/PR creation. | PASS | PASS | **PASS** |
 | **TC-5.3** | Multi-Duplicate Sweep *(New)* | Multiple duplicate issues confirmed during resolution. | • Includes closing references (`Fixes #X, Fixes #Y`) for all confirmed duplicate issues in PR description and commit body. | PENDING | UNTESTED | **PENDING** |
 
@@ -79,4 +79,4 @@
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **TC-6.1** | Merge Execution (`CAN_MERGE = true`) | PR created and user has write/admin access. | • Prompts user to merge PR.<br>• Calls `merge_pull_request` upon confirmation to trigger automated issue closure. | PASS | UNTESTED | **PASS** |
 | **TC-6.2** | Read-Only User (`CAN_MERGE = false`) | PR created but user lacks write access. | • Suppresses merge offer.<br>• Outputs PR URL and instructs user to request maintainer review. | UNTESTED | UNTESTED | **UNTESTED** |
-| **TC-6.3** | Workspace Restoration & Branch Cleanup | PR merged or session concluding. | • Switches checkout back to default branch (`git checkout main && git pull`).<br>• Deletes local and remote feature branches. | PASS | FAIL *(Skipped cleanup)* | **FAIL** *(Regression)* |
+| **TC-6.3** | Workspace Restoration & Branch Cleanup | PR merged or session concluding. | • Switches checkout back to default branch (`git checkout main && git pull`).<br>• Deletes local and remote feature branches. | PASS | PASS | **PASS** |

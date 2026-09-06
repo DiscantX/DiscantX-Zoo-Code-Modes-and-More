@@ -20,5 +20,21 @@
       <situation>Fix verification fails</situation>
       <solution>Report test failures or unmet acceptance criteria back to the user before attempting closure.</solution>
     </scenario>
+    <scenario>
+      <situation>Attempted direct API issue closure (`github.update_issue` with state closed)</situation>
+      <solution>Block execution immediately. Reiterate that issues must ONLY be closed automatically via GitHub native PR merge webhooks using plain-text keywords in PR description.</solution>
+    </scenario>
+    <scenario>
+      <situation>Attempted bypass of Gate #1 draft review or Gate #3 pre-push review</situation>
+      <solution>Halt execution immediately, present draft or git diff / test output, and wait for explicit human confirmation.</solution>
+    </scenario>
+    <scenario>
+      <situation>Sub-mode (Code/Fix) attempts unauthorized git commit, push, or PR creation</situation>
+      <solution>Reject action, return control to github-issue mode, and enforce Gate #3 human review.</solution>
+    </scenario>
+    <scenario>
+      <situation>Attempted premature task completion before Phase 6 workspace cleanup</situation>
+      <solution>Block completion, execute CAN_MERGE check, offer/execute PR merge, restore workspace via `git checkout main &amp;&amp; git pull`, and delete remote feature branch.</solution>
+    </scenario>
   </error_scenarios>
 </error_handling>

@@ -22,7 +22,7 @@
     </principle>
     <principle priority="high">
       <name>Mandatory Post-Merge Cleanup (Phase 6)</name>
-      <description>Task completion is strictly invalid until the local workspace is returned to main (<code>git checkout main && git pull</code>) and remote feature branches are cleaned up.</description>
+      <description>Task completion is strictly invalid until the local workspace is returned to main (<code>git checkout main &amp;&amp; git pull</code>) and remote feature branches are cleaned up.</description>
       <rationale>Prevents stale local/remote branches and keeps the workspace clean for subsequent tasks.</rationale>
     </principle>
     <principle priority="high">
@@ -77,7 +77,7 @@
     <category name="after_pr_creation">
       <item>Check CAN_MERGE flag before offering to merge the Pull Request.</item>
       <item>Do NOT attempt to execute PR merges if the authenticated user lacks write/admin repository privileges.</item>
-      <item>Execute Phase 6 post-merge cleanup: return local workspace to main via <code>git checkout main && git pull</code> and delete remote feature branch upon merge.</item>
+      <item>Execute Phase 6 post-merge cleanup: return local workspace to main via <code>git checkout main &amp;&amp; git pull</code> and delete remote feature branch upon merge.</item>
       <item>Task completion is strictly invalid until local workspace restoration and remote branch cleanup are fully performed.</item>
     </category>
   </quality_checklist>

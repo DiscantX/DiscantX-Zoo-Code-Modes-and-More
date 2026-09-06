@@ -39,7 +39,7 @@
         <step>Rewrite user prompt into professional GitHub Markdown format.</step>
         <step>Include sections: Summary, Steps to Reproduce, Expected Behavior, and Actual Behavior. <strong>Do NOT include Acceptance Criteria in the GitHub issue body.</strong></step>
         <step>Store Acceptance Criteria internally in your private memory/scratchpad for later verification.</step>
-        <step><strong>MANDATORY APPROVAL GATE:</strong> Present the drafted issue Markdown to the user. <strong>STOP and WAIT for explicit user approval before calling the <code>create_issue</code> MCP tool.</strong></step>
+        <step><strong>MANDATORY APPROVAL GATE #1:</strong> Present the drafted issue Markdown to the user. <strong>CRITICAL: The execution agent is STRICTLY FORBIDDEN from calling the <code>create_issue</code> MCP tool in the same turn it generates or revises the issue body. It MUST output the drafted Markdown and STOP and WAIT for explicit human approval before invoking <code>create_issue</code>.</strong></step>
       </steps>
     </phase>
     
@@ -56,8 +56,11 @@
     <phase name="issue_creation">
       <description>Create issue on GitHub with conditional assignment</description>
       <steps>
-        <step>Upon user approval, call GitHub MCP <code>create_issue</code> tool with the clean public description (Summary, Steps, Expected/Actual Behavior only).</step>
-        <step>Record the created issue number, title, and HTML URL. Ensure the issue remains OPEN.</step>
+        <step>Upon user approval at Gate #1, call GitHub MCP <code>create_issue</code> tool with the clean public description (Summary, Steps, Expected/Actual Behavior only).</step>
+        <step>
+          Record the created issue number, title, and HTML URL. Ensure the issue remains OPEN. 
+          <strong>STRICT PROHIBITION: Never call <code>github.update_issue</code> to set <code>"state": "closed"</code> or manually close issues via API. Issues must ONLY be closed automatically via GitHub native PR merge webhooks.</strong>
+        </step>
       </steps>
     </phase>
     
@@ -73,8 +76,8 @@
         </step>
         <step>If approved, create and switch to a dedicated remote feature branch formatted strictly as <code>issue-{number}-{short-slug}</code> (e.g., <code>issue-5-async-await-fix</code> or <code>issue-7-connection-leak-fix</code>). <strong>CRITICAL: Standalone issue numbers (e.g. <code>issue-7</code>) are strictly prohibited. Branch names MUST include a descriptive slug following the pattern <code>issue-{number}-{short-slug}</code>.</strong></step>
         <step>
-          Hand off task to Orchestrator or Code mode to implement the fix. 
-          <strong>SUB-MODE RESTRICTION:</strong> Code and Orchestrator modes must ONLY modify files and run local unit tests. They are strictly forbidden from executing <code>git commit</code>, <code>git push</code>, or creating pull requests. Control must return to GitHub Issue Mode once code changes and local tests are completed.
+          Hand off task to Code or Orchestrator sub-modes to implement the fix. 
+          <strong>STRICT SUB-MODE RESTRICTION:</strong> Code and Fix sub-modes are restricted strictly to local file modifications and running local test suites. They are <strong>FORBIDDEN</strong> from running <code>git commit</code>, <code>git push</code>, or calling GitHub PR tools directly. Control <strong>MUST</strong> return to <code>github-issue</code> mode to present the git diff and unit test results for explicit human review (Gate #3).
         </step>
       </steps>
     </phase>
@@ -86,7 +89,7 @@
         <step>Verify implementation against your internal Acceptance Criteria checklist.</step>
         <step>
           <strong>MANDATORY HARD STOP GATE #3:</strong> Present the fix review (git diff and test output) to the user. 
-          <strong>STOP and WAIT for explicit user confirmation before executing <code>git commit</code>, <code>git push</code>, or calling <code>create_pull_request</code>.</strong>
+          <strong>CRITICAL: Require explicit user confirmation at Gate #3 BEFORE executing <code>git commit</code>, <code>git push</code>, and <code>create_pull_request</code>.</strong>
         </step>
         <step>
           Upon explicit approval, commit changes on branch <code>issue-{number}-{short-slug}</code> with raw plain-text issue references in the commit message, including the primary issue and all confirmed open duplicates (e.g., <code>Fix issue logic (Fixes #{number}, Fixes #11, Fixes #12)</code>). 
@@ -103,7 +106,7 @@
           </ul>
         </step>
         <step>
-          <strong>CRITICAL AUTOMATION RULE:</strong> NEVER call the GitHub Issues API or use MCP tools to manually close the issue. Leave the issue OPEN so GitHub native webhooks close it automatically upon PR merge.
+          <strong>STRICT PROHIBITION AGAINST DIRECT API ISSUE CLOSURE:</strong> NEVER call the GitHub Issues API or use MCP tools (such as <code>github.update_issue</code> with <code>"state": "closed"</code>) to manually close the issue. Leave the issue OPEN so GitHub native PR merge webhooks close it automatically.
         </step>
       </steps>
     </phase>
@@ -112,10 +115,13 @@
       <description>Mandatory Phase 6: Handle merge evaluation, execute PR merge if permitted, restore local workspace to default branch, and delete remote feature branch</description>
       <steps>
         <step>
+          <strong>FORBIDDEN COMPLETION RULE:</strong> Calling completion tools (`attempt_completion`) or declaring a task complete immediately after opening or pushing a PR is strictly forbidden.
+        </step>
+        <step>
           <strong>CONDITIONAL MERGE GATE (CAN_MERGE Evaluation):</strong>
           <ul>
             <li>
-              <strong>If CAN_MERGE is true:</strong> Ask the user: "PR #{pr_number} is ready. Would you like me to merge it into main now to automatically close Issue #{issue_number}?" 
+              <strong>If CAN_MERGE is true:</strong> Ask the user: "PR #{pr_number} is ready. Would you like me to merge it into main now to automatically close Issue #{issue_number} via native webhook?" 
               If approved, call the GitHub MCP <code>merge_pull_request</code> tool.
             </li>
             <li>
@@ -123,9 +129,9 @@
             </li>
           </ul>
         </step>
-        <step>Switch the local workspace back to the default branch using <code>git checkout main && git pull</code>.</step>
-        <step>If the PR was merged during this session (or upon confirmation of PR merge), delete the remote feature branch <code>issue-{number}-{short-slug}</code> from <code>origin</code>.</step>
-        <step><strong>CRITICAL COMPLETION RULE:</strong> Never call <code>attempt_completion</code> or declare the task finished until Phase 6 is fully executed (CAN_MERGE evaluation completed, PR merge offered/executed, local workspace returned to main via <code>git checkout main && git pull</code>, and remote feature branch deleted).</step>
+        <step>Restore the local workspace to the default branch using <code>git checkout main &amp;&amp; git pull</code>.</step>
+        <step>Delete the local and remote feature branch <code>issue-{number}-{short-slug}</code> post-merge.</step>
+        <step><strong>MANDATORY PHASE 6 COMPLETION RULE:</strong> Never call <code>attempt_completion</code> or declare the task finished until Phase 6 is fully executed (CAN_MERGE evaluated, PR merge offered/executed, local workspace returned to main via <code>git checkout main &amp;&amp; git pull</code>, and remote feature branch deleted).</step>
       </steps>
     </phase>
   </main_workflow>
@@ -138,6 +144,6 @@
     <criterion>Code fix committed on <code>issue-{number}-{short-slug}</code> branch with raw plain-text references and pushed to origin</criterion>
     <criterion>Rich PR description opened with standalone <code>Fixes #{number}</code> and confirmed duplicate closing references</criterion>
     <criterion>Issue left OPEN for GitHub native webhook automated closure upon PR merge</criterion>
-    <criterion>Mandatory Phase 6 executed: CAN_MERGE evaluated, PR merge handled, local workspace restored via <code>git checkout main && git pull</code>, and remote feature branch deleted prior to completion</criterion>
+    <criterion>Mandatory Phase 6 executed: CAN_MERGE evaluated, PR merge handled, local workspace restored via <code>git checkout main &amp;&amp; git pull</code>, and remote feature branch deleted prior to completion</criterion>
   </completion_criteria>
 </workflow_instructions>
