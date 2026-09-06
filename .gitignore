@@ -128,3 +128,7 @@ Thumbs.db
 .qdrant_storage/
 .roo/
 */txt/
+openwiki/
+.github/workflows/
+AGENTS.md
+CLAUDE.md

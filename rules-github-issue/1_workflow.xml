@@ -44,10 +44,11 @@
     </phase>
     
     <phase name="duplicate_search">
-      <description>Search existing issues for duplicates</description>
+      <description>Search existing issues for duplicates and perform smart semantic analysis</description>
       <steps>
         <step>Query GitHub issues using MCP tools (e.g., search_issues or list_issues).</step>
-        <step>Compare open/closed issues with keywords from the drafted issue.</step>
+        <step>Briefly check the titles and descriptions of the top search results before showing the choice menu.</step>
+        <step>Provide a quick, one-sentence recommendation explaining whether each candidate is an actual semantic duplicate or just happens to share the same keywords.</step>
         <step>If similar issue found, present options to user: (a) Link as related, (b) Comment on existing issue instead, or (c) Create new issue.</step>
       </steps>
     </phase>
@@ -88,7 +89,7 @@
           <strong>STOP and WAIT for explicit user confirmation before executing <code>git commit</code>, <code>git push</code>, or calling <code>create_pull_request</code>.</strong>
         </step>
         <step>
-          Upon explicit approval, commit changes on branch <code>issue-{number}-{short-slug}</code> with a raw plain-text issue reference in the commit message (e.g., <code>Fix issue logic (Fixes #{number})</code>). 
+          Upon explicit approval, commit changes on branch <code>issue-{number}-{short-slug}</code> with raw plain-text issue references in the commit message, including the primary issue and all confirmed open duplicates (e.g., <code>Fix issue logic (Fixes #{number}, Fixes #11, Fixes #12)</code>). 
           <strong>CRITICAL:</strong> Use raw plain-text <code>#number</code>. NEVER use Markdown links <code>[#number](url)</code> or templates.
         </step>
         <step>Push the feature branch <code>issue-{number}-{short-slug}</code> to <code>origin</code>.</step>
@@ -98,7 +99,7 @@
           <ul>
             <li><strong>Summary of Changes:</strong> Brief overview of the problem and implemented solution.</li>
             <li><strong>Testing & Verification:</strong> Summary of tests run and acceptance criteria verified.</li>
-            <li><strong>Closing Reference:</strong> Raw plain-text closing keyword on its own line at the end (e.g., <code>Fixes #{number}</code>).</li>
+            <li><strong>Closing Reference:</strong> Raw plain-text closing keywords on their own line at the end, including the primary issue and all confirmed open duplicates so GitHub closes them all together in one go (e.g., <code>Fixes #{number}</code>, <code>Fixes #11</code>, <code>Fixes #12</code>).</li>
           </ul>
         </step>
         <step>
@@ -135,7 +136,7 @@
     <criterion>User explicitly confirmed issue draft before GitHub creation</criterion>
     <criterion>User explicitly confirmed attempting fix and reviewing git diff/test results prior to PR submission (Hard Stop Gate #3)</criterion>
     <criterion>Code fix committed on <code>issue-{number}-{short-slug}</code> branch with raw plain-text references and pushed to origin</criterion>
-    <criterion>Rich PR description opened with standalone <code>Fixes #{number}</code> reference</criterion>
+    <criterion>Rich PR description opened with standalone <code>Fixes #{number}</code> and confirmed duplicate closing references</criterion>
     <criterion>Issue left OPEN for GitHub native webhook automated closure upon PR merge</criterion>
     <criterion>Mandatory Phase 6 executed: CAN_MERGE evaluated, PR merge handled, local workspace restored via <code>git checkout main && git pull</code>, and remote feature branch deleted prior to completion</criterion>
   </completion_criteria>

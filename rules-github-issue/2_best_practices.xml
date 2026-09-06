@@ -1,14 +1,19 @@
 <best_practices>
   <general_principles>
     <principle priority="high">
-      <name>Internal-Only Acceptance Criteria</name>
-      <description>Acceptance criteria are strictly private internal checklists for Roo to evaluate fix correctness. They must never be included in GitHub issues or public artifacts.</description>
-      <rationale>Keeps public issues clean for third parties while giving Roo precise validation criteria.</rationale>
+      <name>Internal-Only Acceptance Criteria & Draft Precedence Override</name>
+      <description>Acceptance criteria are strictly private internal checklists for Roo to evaluate fix correctness. They must never be included in GitHub issues or public artifacts. However, if the user explicitly instructs the agent during Gate #1 draft review to include specific function names, code logic, or file paths in the public issue draft, the user's explicit directive overrides the default clean-description guideline (while strictly maintaining the rule against leaking internal Acceptance Criteria).</description>
+      <rationale>Keeps public issues clean for third parties while giving Roo precise validation criteria and honoring explicit user customization requests.</rationale>
     </principle>
     <principle priority="high">
       <name>Conditional Issue Assignment</name>
-      <description>Only assign the stakeholder (STAKEHOLDER_USERNAME resolved via user.email) to an issue if it will remain open without an immediate automated fix. Do not assign if the issue is being fixed immediately in the active session.</description>
-      <rationale>Prevents notification noise for issues that are immediately resolved via PR automation.</rationale>
+      <description>Only assign the stakeholder (STAKEHOLDER_USERNAME resolved via user.email) to an issue if it will remain open without an immediate automated fix (including when the user declines an immediate fix or selects "No, do not attempt a fix", requiring an explicit `add_assignees` call). Do not assign if the issue is being fixed immediately in the active session.</description>
+      <rationale>Ensures accountability and follow-up ownership for issues left open without immediate resolution.</rationale>
+    </principle>
+    <principle priority="high">
+      <name>Mandatory Duplicate Search Interception & Prompting</name>
+      <description>Whenever <code>search_issues</code> returns a matching hit (open or closed), internal reasoning alone is insufficient—the agent MUST halt and explicitly prompt the user with choices (a) Link as related, (b) Comment on existing issue, or (c) Create new issue anyway before proceeding.</description>
+      <rationale>Prevents duplicate issue creation and ensures user control over issue tracking.</rationale>
     </principle>
     <principle priority="high">
       <name>Mandatory User Confirmation Gates & Sub-Mode Restrictions</name>
@@ -52,14 +57,14 @@
   
   <quality_checklist>
     <category name="before_issue_creation">
-      <item>Check for duplicate open or closed issues</item>
+      <item>Check for duplicate open or closed issues using `search_issues` and explicitly prompt the user with choices (a, b, c) upon any matching hit</item>
       <item>Resolve STAKEHOLDER_USERNAME via git config user.email</item>
-      <item>Verify acceptance criteria are excluded from public issue markdown</item>
-      <item>Get explicit user confirmation on the drafted issue Markdown BEFORE creating the issue on GitHub.</item>
+      <item>Verify acceptance criteria are excluded from public issue markdown (unless user explicitly overrides during Gate #1 draft review)</item>
+      <item>Get explicit user confirmation on the drafted issue Markdown BEFORE creating the issue on GitHub. If user requests custom description modifications, pause and wait for user's raw text input.</item>
     </category>
     <category name="before_fixing">
       <item>Ask user explicitly if we should attempt a fix</item>
-      <item>If user declines fix, assign STAKEHOLDER_USERNAME to the open issue</item>
+      <item>If user declines fix or selects "No, do not attempt a fix", call `add_assignees` to assign STAKEHOLDER_USERNAME to the open issue</item>
       <item>Ensure fix is developed on a dedicated <code>issue-{number}-{short-slug}</code> branch (standalone numbers prohibited)</item>
     </category>
     <category name="before_pr_creation">
