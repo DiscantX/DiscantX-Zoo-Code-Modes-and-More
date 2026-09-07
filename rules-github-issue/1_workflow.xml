@@ -1,6 +1,6 @@
 <workflow_instructions>
   <mode_overview>
-    Manage GitHub issues from raw bug reports or tasks, create public-facing issues (strictly excluding internal acceptance criteria), coordinate code fixes on descriptive feature branches adhering strictly to regex pattern issue-{number}-{short-slug}, create rich Pull Requests, enforce mandatory PR workflows (no direct pushes to main, no manual API issue closures), offer native PR merges based on permissions, and return local repository state to default branch post-workflow via git checkout main && git pull.
+    Manage GitHub issues from raw bug reports or tasks, create public-facing issues (strictly excluding internal acceptance criteria), coordinate code fixes on descriptive feature branches adhering strictly to regex pattern issue-{number}-{short-slug}, create rich Pull Requests, enforce mandatory PR workflows (no direct pushes to main, no manual API issue closures), offer native PR merges based on permissions, and return local repository state to default branch post-workflow via git checkout main &amp;&amp; git pull.
   </mode_overview>
   
   <initialization_steps>
@@ -108,11 +108,11 @@
           <strong>STRICT PROHIBITION:</strong> Direct pushes to `main` or `master` are <strong>STRICTLY FORBIDDEN</strong>. All code changes must go through a feature branch and a Pull Request.
         </step>
         <step>
-          Open a Pull Request via <code>create_pull_request</code> from <code>issue-{number}-{short-slug}</code> into the default branch (<code>main</code> or <code>master</i>). Bypassing PR creation and pushing straight to main or closing issues manually is a critical protocol violation.
+          Open a Pull Request via <code>create_pull_request</code> from <code>issue-{number}-{short-slug}</code> into the default branch (<code>main</code> or <code>master</code>). Bypassing PR creation and pushing straight to main or closing issues manually is a critical protocol violation.
           Format the PR description using a rich structured template:
           <ul>
             <li><strong>Summary of Changes:</strong> Brief overview of the problem and implemented solution.</li>
-            <li><strong>Testing & Verification:</strong> Summary of tests run and acceptance criteria verified.</li>
+            <li><strong>Testing &amp; Verification:</strong> Summary of tests run and acceptance criteria verified.</li>
             <li><strong>Closing Reference:</strong> Raw plain-text closing keywords on their own line at the end, including the primary issue and all confirmed open duplicates so GitHub closes them all together in one go (e.g., <code>Fixes #{number}</code>, <code>Fixes #11</code>, <code>Fixes #12</code>).</li>
           </ul>
         </step>
@@ -129,7 +129,7 @@
           <strong>FORBIDDEN COMPLETION RULE:</strong> Calling completion tools (<code>attempt_completion</code>) or declaring a task complete immediately after opening or pushing a PR is strictly forbidden. Phase 6 execution is mandatory.
         </step>
         <step number="2">
-          <strong>CAN_MERGE EVALUATION & MERGE GATE:</strong> Check the <code>CAN_MERGE</code> flag evaluated during Phase 1.
+          <strong>CAN_MERGE EVALUATION &amp; MERGE GATE:</strong> Check the <code>CAN_MERGE</code> flag evaluated during Phase 1.
           If <code>CAN_MERGE == true</code>, prompt the user using <code>ask_followup_question</code> with choices: <code>["Merge PR now and clean up workspace", "Leave PR open for maintainer review"]</code>.
           If <code>CAN_MERGE == false</code>, inform the user that maintainer review is required and proceed directly to Step 4 (Workspace Restoration).
         </step>
@@ -157,6 +157,6 @@
     <criterion>Code fix committed on strict regex-compliant branch <code>issue-{number}-{short-slug}</code> with raw plain-text references and pushed to origin (bare numbers and `fix/`/`feature/` prefixes strictly forbidden)</criterion>
     <criterion>Rich PR description opened via `create_pull_request` with standalone <code>Fixes #{number}</code> and confirmed duplicate closing references (bypassing PR creation strictly forbidden)</criterion>
     <criterion>Issue left OPEN for GitHub native webhook automated closure upon PR merge (manual `update_issue` state closure strictly forbidden)</criterion>
-    <criterion>Mandatory Phase 6 executed: CAN_MERGE evaluated, PR merge handled, local workspace restored via <code>git checkout main && git pull</code>, and remote feature branch deleted prior to completion</criterion>
+    <criterion>Mandatory Phase 6 executed: CAN_MERGE EVALUATION &amp; MERGE GATE evaluated, PR merge handled, local workspace restored via <code>git checkout main &amp;&amp; git pull</code>, and remote feature branch deleted prior to completion</criterion>
   </completion_criteria>
 </workflow_instructions>
