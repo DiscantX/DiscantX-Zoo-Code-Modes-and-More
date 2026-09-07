@@ -6,6 +6,16 @@
       <rationale>Keeps public issues clean for third parties while giving Roo precise validation criteria and honoring explicit user customization requests.</rationale>
     </principle>
     <principle priority="high">
+      <name>Explicit Local Git Identity Scoping & Safe Command Batching</name>
+      <description>Whenever setting fallback or temporary Git identity values, MUST ALWAYS use explicit scope flags (`git config --local user.name "..."`, `git config --local user.email "..."`). Furthermore, non-interactive sequential setup or Git operations may be batched within a single execution turn to save API round-trips, but arbitrary shell chaining operators (`&`, `;`, PowerShell `& { ... }`) are strictly banned. Command batching must NEVER cross any mandatory approval gate (Gate #1, Gate #2, Gate #3).</description>
+      <rationale>Prevents global scope side-effects, syntax errors from shell operators, and premature gate bypassing.</rationale>
+    </principle>
+    <principle priority="high">
+      <name>Gate #1 Universal Enforcement on Duplicate Overrides</name>
+      <description>Selecting "Create new issue" after a duplicate search menu does NOT bypass Gate #1. The agent MUST always draft the public issue Markdown and halt execution at Hard Stop Gate #1 to present the draft and get explicit user confirmation before calling create_issue.</description>
+      <rationale>Ensures human review of all issues even when overriding duplicate detection.</rationale>
+    </principle>
+    <principle priority="high">
       <name>Conditional Issue Assignment</name>
       <description>Only assign the stakeholder (STAKEHOLDER_USERNAME resolved via user.email) to an issue if it will remain open without an immediate automated fix (including when the user declines an immediate fix or selects "No, do not attempt a fix", requiring an explicit `add_assignees` call). Do not assign if the issue is being fixed immediately in the active session.</description>
       <rationale>Ensures accountability and follow-up ownership for issues left open without immediate resolution.</rationale>
@@ -61,9 +71,9 @@
   <quality_checklist>
     <category name="before_issue_creation">
       <item>Check for duplicate open or closed issues using `search_issues` and explicitly prompt the user with choices (a, b, c) upon any matching hit</item>
-      <item>Resolve STAKEHOLDER_USERNAME via git config user.email</item>
+      <item>Resolve STAKEHOLDER_USERNAME via git config user.email, ensuring any git config setup uses explicit `--local` scope flags (`git config --local user.name ...`, `git config --local user.email ...`)</item>
       <item>Verify acceptance criteria are excluded from public issue markdown (unless user explicitly overrides during Gate #1 draft review)</item>
-      <item>Get explicit user confirmation on the drafted issue Markdown BEFORE creating the issue on GitHub (Hard Stop Gate #1: strictly prohibited from calling `create_issue` in the same turn the draft is generated). If user requests custom description modifications, pause and wait for user's raw text input.</item>
+      <item>Get explicit user confirmation on the drafted issue Markdown BEFORE creating the issue on GitHub (Hard Stop Gate #1: strictly prohibited from calling `create_issue` in the same turn the draft is generated, even when overriding duplicate search results). If user requests custom description modifications, pause and wait for user's raw text input.</item>
     </category>
     <category name="before_fixing">
       <item>Ask user explicitly if we should attempt a fix</item>

@@ -1,6 +1,6 @@
 <workflow_instructions>
   <mode_overview>
-    Manage GitHub issues from raw bug reports or tasks, create public-facing issues (strictly excluding internal acceptance criteria), coordinate code fixes on descriptive feature branches adhering strictly to regex pattern issue-{number}-{short-slug}, create rich Pull Requests, enforce mandatory PR workflows (no direct pushes to main, no manual API issue closures), offer native PR merges based on permissions, and return local repository state to default branch post-workflow via git checkout main &amp;&amp; git pull.
+    Manage GitHub issues from raw bug reports or tasks, create public-facing issues (strictly excluding internal acceptance criteria), coordinate code fixes on descriptive feature branches adhering strictly to regex pattern issue-{number}-{short-slug}, create rich Pull Requests, enforce mandatory PR workflows (no direct pushes to main, no manual API issue closures), offer native PR merges based on permissions, and return local repository state to default branch post-workflow via git checkout main && git pull.
   </mode_overview>
   
   <initialization_steps>
@@ -19,7 +19,8 @@
         2. Run git command: <code>git config --get user.email</code>.
         3. Resolve the GitHub handle using GitHub Search API or MCP user search with the query <code>{email}+in:email</code>.
         4. Retain the resulting <code>login</code> username in working memory as <code>STAKEHOLDER_USERNAME</code>.
-        5. <em>Fallback:</em> If email is unset or API search yields no match, leave <code>STAKEHOLDER_USERNAME</code> empty and ask the user during issue creation if they would like to specify an assignee.
+        5. <em>Fallback / Setup:</em> If email is unset or fallback git identity setup is required, MUST ALWAYS use explicit scope flags: <code>git config --local user.name "Identity Name"</code> and <code>git config --local user.email "email@example.local"</code>. Unscoped or global config sets without `--local` are prohibited.
+        6. <strong>Safe Sequential Command Batching & Shell Operator Rules:</strong> When executing non-interactive setup or Git operations (such as local config, commit, push), the agent may batch them sequentially within a single tool execution turn. <strong>STRICT PROHIBITION:</strong> Arbitrary shell chaining operators (such as <code>&</code>, <code>;</code>, or PowerShell <code>& { ... }</code>) inside individual tool calls are strictly banned. Furthermore, command batching <strong>MUST NEVER</strong> cross a mandatory approval gate (Gate #1 Draft Review, Gate #2 Fix Authorization, Gate #3 Pre-Push/Diff Review); the agent must halt completely at every gate.
       </details>
     </step>
     
@@ -53,7 +54,10 @@
         <step>Query GitHub issues using MCP tools (e.g., search_issues or list_issues).</step>
         <step>Briefly check the titles and descriptions of the top search results before showing the choice menu.</step>
         <step>Provide a quick, one-sentence recommendation explaining whether each candidate is an actual semantic duplicate or just happens to share the same keywords.</step>
-        <step>If similar issue found, present options to user: (a) Link as related, (b) Comment on existing issue instead, or (c) Create new issue.</step>
+        <step>
+          If similar issue found, present options to user: (a) Link as related, (b) Comment on existing issue instead, or (c) Create new issue.
+          <strong>MANDATORY DUPLICATE OVERRIDE RULE:</strong> Even if the user selects "Create new issue" (override), this choice does <strong>NOT</strong> bypass Gate #1. The agent MUST ALWAYS proceed to issue drafting, present the drafted public Markdown issue to the user, and HALT execution at Hard Stop Gate #1. Calling <code>create_issue</code> without first presenting the draft and receiving explicit user confirmation is strictly prohibited under all circumstances.
+        </step>
       </steps>
     </phase>
     
@@ -112,7 +116,7 @@
           Format the PR description using a rich structured template:
           <ul>
             <li><strong>Summary of Changes:</strong> Brief overview of the problem and implemented solution.</li>
-            <li><strong>Testing &amp; Verification:</strong> Summary of tests run and acceptance criteria verified.</li>
+            <li><strong>Testing & Verification:</strong> Summary of tests run and acceptance criteria verified.</li>
             <li><strong>Closing Reference:</strong> Raw plain-text closing keywords on their own line at the end, including the primary issue and all confirmed open duplicates so GitHub closes them all together in one go (e.g., <code>Fixes #{number}</code>, <code>Fixes #11</code>, <code>Fixes #12</code>).</li>
           </ul>
         </step>
@@ -129,7 +133,7 @@
           <strong>FORBIDDEN COMPLETION RULE:</strong> Calling completion tools (<code>attempt_completion</code>) or declaring a task complete immediately after opening or pushing a PR is strictly forbidden. Phase 6 execution is mandatory.
         </step>
         <step number="2">
-          <strong>CAN_MERGE EVALUATION &amp; MERGE GATE:</strong> Check the <code>CAN_MERGE</code> flag evaluated during Phase 1.
+          <strong>CAN_MERGE EVALUATION & MERGE GATE:</strong> Check the <code>CAN_MERGE</code> flag evaluated during Phase 1.
           If <code>CAN_MERGE == true</code>, prompt the user using <code>ask_followup_question</code> with choices: <code>["Merge PR now and clean up workspace", "Leave PR open for maintainer review"]</code>.
           If <code>CAN_MERGE == false</code>, inform the user that maintainer review is required and proceed directly to Step 4 (Workspace Restoration).
         </step>
@@ -137,10 +141,10 @@
           <strong>MERGE EXECUTION:</strong> If user approves merge at Step 2, call GitHub MCP <code>merge_pull_request(merge_method='squash')</code>.
         </step>
         <step number="4">
-          <strong>MANDATORY WORKSPACE RESTORATION:</strong> Restore local workspace to main default branch immediately by executing CLI command: <code>git checkout main &amp;&amp; git pull</code>. Never leave the local workspace on a feature branch.
+          <strong>MANDATORY WORKSPACE RESTORATION:</strong> Restore local workspace to main default branch immediately by executing CLI command: <code>git checkout main && git pull</code>. Never leave the local workspace on a feature branch.
         </step>
         <step number="5">
-          <strong>BRANCH CLEANUP:</strong> Delete feature branch locally and remotely by executing CLI command: <code>git branch -d issue-{number}-{short-slug} &amp;&amp; git push origin --delete issue-{number}-{short-slug}</code>.
+          <strong>BRANCH CLEANUP:</strong> Delete feature branch locally and remotely by executing CLI command: <code>git branch -d issue-{number}-{short-slug} && git push origin --delete issue-{number}-{short-slug}</code>.
         </step>
         <step number="6">
           <strong>PHASE 6 COMPLETION RULE:</strong> Only after steps 1–5 are completely executed may the agent call <code>attempt_completion</code> to finalize the task.
@@ -152,11 +156,11 @@
   <completion_criteria>
     <criterion>Issue created on GitHub without leaking internal acceptance criteria</criterion>
     <criterion>STAKEHOLDER_USERNAME assigned ONLY if issue is left open without immediate fix execution</criterion>
-    <criterion>User explicitly confirmed issue draft before GitHub creation (Hard Stop Gate #1 enforced without same-turn tool invocation)</criterion>
+    <criterion>User explicitly confirmed issue draft before GitHub creation (Hard Stop Gate #1 enforced without same-turn tool invocation, even on duplicate overrides)</criterion>
     <criterion>User explicitly confirmed attempting fix and reviewing git diff/test results prior to PR submission (Hard Stop Gate #3 enforced; sub-modes restricted from committing/pushing)</criterion>
     <criterion>Code fix committed on strict regex-compliant branch <code>issue-{number}-{short-slug}</code> with raw plain-text references and pushed to origin (bare numbers and `fix/`/`feature/` prefixes strictly forbidden)</criterion>
     <criterion>Rich PR description opened via `create_pull_request` with standalone <code>Fixes #{number}</code> and confirmed duplicate closing references (bypassing PR creation strictly forbidden)</criterion>
     <criterion>Issue left OPEN for GitHub native webhook automated closure upon PR merge (manual `update_issue` state closure strictly forbidden)</criterion>
-    <criterion>Mandatory Phase 6 executed: CAN_MERGE EVALUATION &amp; MERGE GATE evaluated, PR merge handled, local workspace restored via <code>git checkout main &amp;&amp; git pull</code>, and remote feature branch deleted prior to completion</criterion>
+    <criterion>Mandatory Phase 6 executed: CAN_MERGE EVALUATION & MERGE GATE evaluated, PR merge handled, local workspace restored via <code>git checkout main && git pull</code>, and remote feature branch deleted prior to completion</criterion>
   </completion_criteria>
 </workflow_instructions>

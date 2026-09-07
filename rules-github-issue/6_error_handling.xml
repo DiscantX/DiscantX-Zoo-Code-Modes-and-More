@@ -13,6 +13,18 @@
       <solution>Present the existing issue URL to the user and ask whether to link, comment, or override.</solution>
     </scenario>
     <scenario>
+      <situation>Attempted duplicate override without Gate #1 review</situation>
+      <solution>Block execution immediately. Even when user selects "Create new issue anyway", mandate presentation of drafted public issue Markdown and halt at Hard Stop Gate #1 before calling create_issue.</solution>
+    </scenario>
+    <scenario>
+      <situation>Attempted global/unscoped git config setup without --local flag</situation>
+      <solution>Reject unscoped config commands. Enforce explicit scope flag: `git config --local user.name "..."` and `git config --local user.email "..."`.</solution>
+    </scenario>
+    <scenario>
+      <situation>Attempted use of arbitrary shell operators (&, ;, PowerShell & { ... }) or command batching across approval gates</situation>
+      <solution>Reject shell chaining operators. Ensure sequential command batching is non-interactive, avoids banned operators, and NEVER crosses mandatory approval gates (Gate #1, Gate #2, Gate #3).</solution>
+    </scenario>
+    <scenario>
       <situation>Accidental acceptance criteria leakage attempted</situation>
       <solution>Intercept draft creation, strip acceptance criteria from public markdown payload, and retain them solely in private scratchpad.</solution>
     </scenario>
@@ -34,7 +46,7 @@
     </scenario>
     <scenario>
       <situation>Attempted premature task completion before Phase 6 workspace cleanup</situation>
-      <solution>Block completion, execute CAN_MERGE check, offer/execute PR merge, restore workspace via `git checkout main &amp;&amp; git pull`, and delete remote feature branch.</solution>
+      <solution>Block completion, execute CAN_MERGE check, offer/execute PR merge, restore workspace via `git checkout main && git pull`, and delete remote feature branch.</solution>
     </scenario>
   </error_scenarios>
 </error_handling>
