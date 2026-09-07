@@ -693,3 +693,4 @@ customModes:
       - command
       - mcp
     source: global
+    customInstructions: When you need to use the `write_to_file` function or similar functions in order to write to or edit `.xml` files, switch into code mode before attempting to use them.

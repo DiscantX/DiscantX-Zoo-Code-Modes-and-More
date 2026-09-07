@@ -26,22 +26,24 @@
       <rationale>Prevents stale local/remote branches, ensures correct webhook lifecycle closure, and keeps the workspace clean for subsequent tasks.</rationale>
     </principle>
     <principle priority="high">
-      <name>Native PR Automated Closure</name>
-      <description>NEVER call APIs or tools to manually close an issue. Rely entirely on PR descriptions with plain-text references (`Fixes #X`) merging into default branches.</description>
-      <rationale>Ensures audit trail integrity and leverages native GitHub automation.</rationale>
+      <name>Strict PR Lifecycle & Prohibition of Direct Pushes or Manual Closures</name>
+      <description>Bypassing Pull Request creation (e.g., pushing straight to main/master) and manually closing issues via the Issues API (`update_issue`) are strictly prohibited. All fixes must be pushed to a regex-compliant feature branch (`issue-{number}-{short-slug}`), submitted via a rich Pull Request using `create_pull_request` with plain-text closing keywords (`Fixes #{number}`), and left open for automated GitHub webhook closure upon merge.</description>
+      <rationale>Enforces traceability, audit trails, and automated GitHub lifecycle integration.</rationale>
     </principle>
   </general_principles>
   
   <code_conventions>
     <convention category="branch_naming">
-      <rule>Branch names MUST strictly follow the exact pattern <code>issue-{number}-{short-slug}</code>. Standalone issue numbers (e.g., <code>issue-7</code>) or custom prefixes (e.g., <code>fix-issue-5</code>, <code>fix/</code>, <code>feature/</code>, or <code>bugfix-5</code>) are strictly prohibited. A descriptive slug is mandatory (e.g., <code>issue-5-async-await-fix</code>, <code>issue-7-connection-leak-fix</code>).</rule>
+      <rule>Branch names MUST strictly match the regex pattern <code>^issue-[0-9]+-[a-z0-9-]+$</code> (format: <code>issue-{number}-{short-slug}</code>). Bare issue numbers (e.g., <code>issue-7</code>), custom prefixes (e.g., <code>fix-issue-5</code>), and standard gitflow prefixes (e.g., <code>fix/</code>, <code>feature/</code>, <code>bugfix/</code>) are <strong>STRICTLY FORBIDDEN</strong> and will fail TC-4.3 evaluation checks.</rule>
       <examples>
         <good>issue-5-async-await-fix</good>
         <good>issue-7-connection-leak-fix</good>
+        <good>issue-3-app-env-override-fix</good>
         <bad>issue-7</bad>
         <bad>fix/issue-5</bad>
         <bad>feature/issue-105</bad>
         <bad>fix-issue-5</bad>
+        <bad>fix/issue-1-db-port</bad>
       </examples>
     </convention>
     
@@ -66,14 +68,14 @@
     <category name="before_fixing">
       <item>Ask user explicitly if we should attempt a fix</item>
       <item>If user declines fix or selects "No, do not attempt a fix", call `add_assignees` to assign STAKEHOLDER_USERNAME to the open issue</item>
-      <item>Ensure fix is developed on a dedicated <code>issue-{number}-{short-slug}</code> branch (standalone issue numbers and generic prefixes like `fix/` or `feature/` are strictly prohibited)</item>
+      <item>Ensure fix is developed on a dedicated branch matching strict regex <code>^issue-[0-9]+-[a-z0-9-]+$</code> (bare numbers and `fix/`/`feature/`/`bugfix/` prefixes are strictly forbidden)</item>
     </category>
     <category name="before_pr_creation">
-      <item>Verify branch name matches exact syntax <code>issue-{number}-{short-slug}</code>.</item>
+      <item>Verify branch name matches exact regex pattern <code>^issue-[0-9]+-[a-z0-9-]+$</code>.</item>
       <item>Ensure sub-mode (Code/Orchestrator) only modified files and ran tests without committing or pushing.</item>
-      <item>Get explicit user confirmation (Hard Stop Gate #3) on git diff and test output BEFORE executing <code>git commit</code>, <code>git push</code>, or creating the PR.</item>
-      <item>Ensure commit and PR body use raw plain-text <code>Fixes #{number}</code> references</item>
-      <item>Verify NO manual issue closure API calls are made</item>
+      <item>Get explicit user confirmation (Hard Stop Gate #3) on git diff and test output BEFORE executing <code>git commit</code>, <code>git push</code>, or creating the PR via `create_pull_request`.</item>
+      <item>Ensure commit and PR body use raw plain-text <code>Fixes #{number}</code> references (never bypass PR creation or push straight to main)</item>
+      <item>Verify NO manual issue closure API calls are made (`update_issue` state closure is strictly forbidden)</item>
     </category>
     <category name="after_pr_creation">
       <item>Check CAN_MERGE flag before offering to merge the Pull Request.</item>

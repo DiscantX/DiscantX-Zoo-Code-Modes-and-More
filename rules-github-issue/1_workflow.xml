@@ -1,6 +1,6 @@
 <workflow_instructions>
   <mode_overview>
-    Manage GitHub issues from raw bug reports or tasks, create public-facing issues (strictly excluding internal acceptance criteria), coordinate code fixes on descriptive feature branches, create rich Pull Requests, optionally offer native PR merges based on permissions, and return local repository state to default branch post-workflow.
+    Manage GitHub issues from raw bug reports or tasks, create public-facing issues (strictly excluding internal acceptance criteria), coordinate code fixes on descriptive feature branches adhering strictly to regex pattern issue-{number}-{short-slug}, create rich Pull Requests, enforce mandatory PR workflows (no direct pushes to main, no manual API issue closures), offer native PR merges based on permissions, and return local repository state to default branch post-workflow via git checkout main && git pull.
   </mode_overview>
   
   <initialization_steps>
@@ -79,8 +79,9 @@
           </ul>
         </step>
         <step>
-          If approved, create and switch to a dedicated remote feature branch formatted strictly as <code>issue-{number}-{short-slug}</code> (e.g., <code>issue-5-async-await-fix</code> or <code>issue-7-connection-leak-fix</code>). 
-          <strong>CRITICAL BRANCH NAMING PROHIBITION:</strong> Standalone issue numbers (e.g. <code>issue-7</code>) and generic prefixes (e.g. <code>fix/</code>, <code>feature/</code>) are strictly prohibited. Branch names <strong>MUST</strong> include a descriptive slug following the exact pattern <code>issue-{number}-{short-slug}</code>.
+          If approved, create and switch to a dedicated remote feature branch adhering strictly to the regex pattern <code>^issue-[0-9]+-[a-z0-9-]+$</code> (e.g., <code>issue-3-app-env-override-fix</code> or <code>issue-7-connection-leak-fix</code>). 
+          <strong>UNYIELDING BRANCH NAMING RULE:</strong> Branch names <strong>MUST</strong> match the exact pattern <code>issue-{number}-{short-slug}</code>. 
+          <strong>STRICT PROHIBITIONS:</strong> Bare issue numbers (e.g., <code>issue-3</code>), custom prefixes (e.g., <code>fix-issue-3</code>), and standard gitflow prefixes (e.g., <code>fix/</code>, <code>feature/</code>, <code>bugfix/</code>) are <strong>STRICTLY FORBIDDEN</strong> and will fail evaluation checks.
         </step>
         <step>
           Hand off task to Code or Orchestrator sub-modes to implement the fix. 
@@ -90,7 +91,7 @@
     </phase>
     
     <phase name="verification_and_pr_submission">
-      <description>Verify fix, review with user, commit, push, create rich Pull Request</description>
+      <description>Verify fix, review with user, commit, push, create rich Pull Request (Strictly no direct push to main, no manual issue closure)</description>
       <steps>
         <step>Upon return from Code/Orchestrator mode, inspect git diff, test results, and status.</step>
         <step>Verify implementation against your internal Acceptance Criteria checklist.</step>
@@ -102,13 +103,16 @@
           Upon explicit approval, commit changes on branch <code>issue-{number}-{short-slug}</code> with raw plain-text issue references in the commit message, including the primary issue and all confirmed open duplicates (e.g., <code>Fix issue logic (Fixes #{number}, Fixes #11, Fixes #12)</code>). 
           <strong>CRITICAL:</strong> Use raw plain-text <code>#number</code>. NEVER use Markdown links <code>[#number](url)</code> or templates.
         </step>
-        <step>Push the feature branch <code>issue-{number}-{short-slug}</code> to <code>origin</code>.</step>
         <step>
-          Open a Pull Request from <code>issue-{number}-{short-slug}</code> into the default branch (<code>main</code> or <code>master</code>). 
+          Push the feature branch <code>issue-{number}-{short-slug}</code> to <code>origin</code>. 
+          <strong>STRICT PROHIBITION:</strong> Direct pushes to `main` or `master` are <strong>STRICTLY FORBIDDEN</strong>. All code changes must go through a feature branch and a Pull Request.
+        </step>
+        <step>
+          Open a Pull Request via <code>create_pull_request</code> from <code>issue-{number}-{short-slug}</code> into the default branch (<code>main</code> or <code>master</i>). Bypassing PR creation and pushing straight to main or closing issues manually is a critical protocol violation.
           Format the PR description using a rich structured template:
           <ul>
             <li><strong>Summary of Changes:</strong> Brief overview of the problem and implemented solution.</li>
-            <li><strong>Testing &amp; Verification:</strong> Summary of tests run and acceptance criteria verified.</li>
+            <li><strong>Testing & Verification:</strong> Summary of tests run and acceptance criteria verified.</li>
             <li><strong>Closing Reference:</strong> Raw plain-text closing keywords on their own line at the end, including the primary issue and all confirmed open duplicates so GitHub closes them all together in one go (e.g., <code>Fixes #{number}</code>, <code>Fixes #11</code>, <code>Fixes #12</code>).</li>
           </ul>
         </step>
@@ -119,7 +123,7 @@
     </phase>
     
     <phase name="post_merge_cleanup">
-      <description>Mandatory Phase 6: Handle merge evaluation, execute PR merge if permitted, restore local workspace to default branch, and delete remote feature branch</description>
+      <description>Mandatory Phase 6: Handle merge evaluation, execute PR merge if permitted, restore local workspace to default branch via git checkout main && git pull, and delete remote feature branch</description>
       <steps>
         <step>
           <strong>FORBIDDEN COMPLETION RULE:</strong> Calling completion tools (<code>attempt_completion</code>) or declaring a task complete immediately after opening or pushing a PR is strictly forbidden. Phase 6 execution is mandatory.
@@ -136,9 +140,11 @@
             </li>
           </ul>
         </step>
-        <step>Restore the local workspace to the default branch using <code>git checkout main &amp;&amp; git pull</code>.</step>
-        <step>Delete the local and remote feature branch <code>issue-{number}-{short-slug}</code> post-merge.</step>
-        <step><strong>MANDATORY PHASE 6 COMPLETION RULE:</strong> Never call <code>attempt_completion</code> or declare the task finished until Phase 6 is fully executed (CAN_MERGE evaluated, PR merge offered/executed, local workspace returned to main via <code>git checkout main &amp;&amp; git pull</code>, and remote feature branch deleted).</step>
+        <step>
+          <strong>MANDATORY WORKSPACE RESTORATION:</strong> Restore the local workspace to the default branch immediately following PR/merge steps by executing <code>git checkout main && git pull</code>. Never leave the local workspace parked on a feature branch.
+        </step>
+        <step>Delete the local and remote feature branch <code>issue-{number}-{short-slug}</code> post-merge/cleanup.</step>
+        <step><strong>MANDATORY PHASE 6 COMPLETION RULE:</strong> Never call <code>attempt_completion</code> or declare the task finished until Phase 6 is fully executed (CAN_MERGE evaluated, PR merge offered/executed, local workspace returned to main via <code>git checkout main && git pull</code>, and remote feature branch deleted).</step>
       </steps>
     </phase>
   </main_workflow>
@@ -148,9 +154,9 @@
     <criterion>STAKEHOLDER_USERNAME assigned ONLY if issue is left open without immediate fix execution</criterion>
     <criterion>User explicitly confirmed issue draft before GitHub creation (Hard Stop Gate #1 enforced without same-turn tool invocation)</criterion>
     <criterion>User explicitly confirmed attempting fix and reviewing git diff/test results prior to PR submission (Hard Stop Gate #3 enforced; sub-modes restricted from committing/pushing)</criterion>
-    <criterion>Code fix committed on strict <code>issue-{number}-{short-slug}</code> branch with raw plain-text references and pushed to origin (bare branch names forbidden)</criterion>
-    <criterion>Rich PR description opened with standalone <code>Fixes #{number}</code> and confirmed duplicate closing references</criterion>
-    <criterion>Issue left OPEN for GitHub native webhook automated closure upon PR merge</criterion>
-    <criterion>Mandatory Phase 6 executed: CAN_MERGE evaluated, PR merge handled, local workspace restored via <code>git checkout main &amp;&amp; git pull</code>, and remote feature branch deleted prior to completion</criterion>
+    <criterion>Code fix committed on strict regex-compliant branch <code>issue-{number}-{short-slug}</code> with raw plain-text references and pushed to origin (bare numbers and `fix/`/`feature/` prefixes strictly forbidden)</criterion>
+    <criterion>Rich PR description opened via `create_pull_request` with standalone <code>Fixes #{number}</code> and confirmed duplicate closing references (bypassing PR creation strictly forbidden)</criterion>
+    <criterion>Issue left OPEN for GitHub native webhook automated closure upon PR merge (manual `update_issue` state closure strictly forbidden)</criterion>
+    <criterion>Mandatory Phase 6 executed: CAN_MERGE evaluated, PR merge handled, local workspace restored via <code>git checkout main && git pull</code>, and remote feature branch deleted prior to completion</criterion>
   </completion_criteria>
 </workflow_instructions>

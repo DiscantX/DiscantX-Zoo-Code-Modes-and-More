@@ -18,16 +18,16 @@
         <description><strong>Hard Stop Gate #1:</strong> Present drafted issue Markdown to the user and halt execution. Do NOT call <code>create_issue</code> in the same turn.</description>
       </step>
       <step number="5">
-        <description>Upon user approval, call GitHub MCP <code>create_issue</code> tool, receiving issue #123 (left open).</description>
+        <description>Upon user approval, call GitHub MCP <code>create_issue</code> tool, receiving issue #123 (left open; never manually closed via API).</description>
       </step>
       <step number="6">
-        <description>Ask user if we should attempt a fix. Upon approval, create branch <code>issue-123-offline-settings-fix</code> (following strict slug convention). Hand off fix task to Orchestrator/Code mode with strict sub-mode instructions (modify files and run local tests only; no commit or push).</description>
+        <description>Ask user if we should attempt a fix. Upon approval, create branch <code>issue-123-offline-settings-fix</code> (following strict regex pattern <code>^issue-[0-9]+-[a-z0-9-]+$</code>; bare numbers or <code>fix/</code> prefixes strictly prohibited). Hand off fix task to Orchestrator/Code mode with strict sub-mode instructions (modify files and run local tests only; no commit or push).</description>
       </step>
       <step number="7">
         <description>Upon return from fix mode, inspect git diff and test output. Hit <strong>Hard Stop Gate #3</strong>: present review to user and wait for explicit approval before any commit, push, or PR creation.</description>
       </step>
       <step number="8">
-        <description>Upon approval, commit changes on branch <code>issue-123-offline-settings-fix</code> with raw reference <code>Fix settings crash when offline (Fixes #123)</code>, push branch to origin, and open PR #124 into main with standalone closing keyword <code>Fixes #123</code>.</description>
+        <description>Upon approval, commit changes on branch <code>issue-123-offline-settings-fix</code> with raw reference <code>Fix settings crash when offline (Fixes #123)</code>, push branch to origin (never pushing directly to main), and open a rich Pull Request via <code>create_pull_request</code> with standalone closing keyword <code>Fixes #123</code>.</description>
       </step>
       <step number="9">
         <description><strong>Mandatory Phase 6 Lifecycle Completion:</strong> Evaluate CAN_MERGE (true), offer PR merge to user, execute <code>merge_pull_request</code> upon approval, return local workspace to default branch via <code>git checkout main && git pull</code>, and delete local/remote feature branch <code>issue-123-offline-settings-fix</code> from origin.</description>
@@ -35,7 +35,7 @@
     </workflow>
     
     <completion>
-      Successfully created GitHub issue #123 (after Hard Stop Gate #1 approval), implemented and tested fix on branch <code>issue-123-offline-settings-fix</code> (without unauthorized sub-mode commits), passed Hard Stop Gate #3, committed, pushed, opened PR #124, executed Phase 6 (CAN_MERGE evaluation, merged PR, restored local workspace to main via <code>git checkout main && git pull</code>, and deleted remote feature branch). Task successfully completed.
+      Successfully created GitHub issue #123 (after Hard Stop Gate #1 approval), implemented and tested fix on strict regex-compliant branch <code>issue-123-offline-settings-fix</code> (without unauthorized sub-mode commits), passed Hard Stop Gate #3, committed, pushed to feature branch, opened rich PR via `create_pull_request`, executed Phase 6 (CAN_MERGE evaluation, merged PR, restored local workspace to main via <code>git checkout main && git pull</code>, and deleted remote feature branch). Task successfully completed.
     </completion>
   </example>
 </complete_examples>
