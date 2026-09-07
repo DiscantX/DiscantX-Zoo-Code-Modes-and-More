@@ -21,9 +21,9 @@
       <rationale>Ensures human-in-the-loop control over code modifications and repo lifecycle.</rationale>
     </principle>
     <principle priority="high">
-      <name>Mandatory Post-Merge Cleanup (Phase 6)</name>
-      <description>Task completion is strictly invalid until the local workspace is returned to main (<code>git checkout main &amp;&amp; git pull</code>) and remote feature branches are cleaned up.</description>
-      <rationale>Prevents stale local/remote branches and keeps the workspace clean for subsequent tasks.</rationale>
+      <name>Mandatory Post-Merge Cleanup & Lifecycle Completion (Phase 6)</name>
+      <description>Task completion is strictly invalid until Phase 6 is fully executed: CAN_MERGE evaluated, PR merge offered/executed, local workspace returned to main (<code>git checkout main && git pull</code>), and remote/local feature branches cleaned up.</description>
+      <rationale>Prevents stale local/remote branches, ensures correct webhook lifecycle closure, and keeps the workspace clean for subsequent tasks.</rationale>
     </principle>
     <principle priority="high">
       <name>Native PR Automated Closure</name>
@@ -34,13 +34,14 @@
   
   <code_conventions>
     <convention category="branch_naming">
-      <rule>Branch names MUST strictly follow the exact pattern <code>issue-{number}-{short-slug}</code>. Standalone issue numbers (e.g., <code>issue-7</code>) or custom prefixes (e.g., <code>fix-issue-5</code>, <code>feature/issue-5</code>, or <code>bugfix-5</code>) are strictly prohibited. A descriptive slug is mandatory (e.g., <code>issue-5-async-await-fix</code>, <code>issue-7-connection-leak-fix</code>).</rule>
+      <rule>Branch names MUST strictly follow the exact pattern <code>issue-{number}-{short-slug}</code>. Standalone issue numbers (e.g., <code>issue-7</code>) or custom prefixes (e.g., <code>fix-issue-5</code>, <code>fix/</code>, <code>feature/</code>, or <code>bugfix-5</code>) are strictly prohibited. A descriptive slug is mandatory (e.g., <code>issue-5-async-await-fix</code>, <code>issue-7-connection-leak-fix</code>).</rule>
       <examples>
         <good>issue-5-async-await-fix</good>
         <good>issue-7-connection-leak-fix</good>
         <bad>issue-7</bad>
+        <bad>fix/issue-5</bad>
+        <bad>feature/issue-105</bad>
         <bad>fix-issue-5</bad>
-        <bad>fix/issue-105</bad>
       </examples>
     </convention>
     
@@ -60,12 +61,12 @@
       <item>Check for duplicate open or closed issues using `search_issues` and explicitly prompt the user with choices (a, b, c) upon any matching hit</item>
       <item>Resolve STAKEHOLDER_USERNAME via git config user.email</item>
       <item>Verify acceptance criteria are excluded from public issue markdown (unless user explicitly overrides during Gate #1 draft review)</item>
-      <item>Get explicit user confirmation on the drafted issue Markdown BEFORE creating the issue on GitHub. If user requests custom description modifications, pause and wait for user's raw text input.</item>
+      <item>Get explicit user confirmation on the drafted issue Markdown BEFORE creating the issue on GitHub (Hard Stop Gate #1: strictly prohibited from calling `create_issue` in the same turn the draft is generated). If user requests custom description modifications, pause and wait for user's raw text input.</item>
     </category>
     <category name="before_fixing">
       <item>Ask user explicitly if we should attempt a fix</item>
       <item>If user declines fix or selects "No, do not attempt a fix", call `add_assignees` to assign STAKEHOLDER_USERNAME to the open issue</item>
-      <item>Ensure fix is developed on a dedicated <code>issue-{number}-{short-slug}</code> branch (standalone numbers prohibited)</item>
+      <item>Ensure fix is developed on a dedicated <code>issue-{number}-{short-slug}</code> branch (standalone issue numbers and generic prefixes like `fix/` or `feature/` are strictly prohibited)</item>
     </category>
     <category name="before_pr_creation">
       <item>Verify branch name matches exact syntax <code>issue-{number}-{short-slug}</code>.</item>
@@ -77,8 +78,8 @@
     <category name="after_pr_creation">
       <item>Check CAN_MERGE flag before offering to merge the Pull Request.</item>
       <item>Do NOT attempt to execute PR merges if the authenticated user lacks write/admin repository privileges.</item>
-      <item>Execute Phase 6 post-merge cleanup: return local workspace to main via <code>git checkout main &amp;&amp; git pull</code> and delete remote feature branch upon merge.</item>
-      <item>Task completion is strictly invalid until local workspace restoration and remote branch cleanup are fully performed.</item>
+      <item>Execute Phase 6 post-merge cleanup: return local workspace to main via <code>git checkout main && git pull</code> and delete local/remote feature branch upon merge.</item>
+      <item>Task completion is strictly invalid until Phase 6 is fully executed (CAN_MERGE evaluation, merge offer/execution, local workspace restoration via <code>git checkout main && git pull</code>, and branch cleanup). Calling `attempt_completion` prematurely is strictly forbidden.</item>
     </category>
   </quality_checklist>
 </best_practices>

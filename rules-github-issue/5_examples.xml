@@ -6,36 +6,36 @@
     
     <workflow>
       <step number="1">
-        <description>Analyze and copyedit prompt into structured GitHub issue format</description>
+        <description>Analyze and copyedit prompt into structured GitHub issue format (excluding internal Acceptance Criteria).</description>
       </step>
       <step number="2">
-        <description>Extract repo owner and repo name from <code>git config --get remote.origin.url</code></description>
+        <description>Retrieve repo owner and user identity via <code>git config --get remote.origin.url</code> and user email lookup.</description>
       </step>
       <step number="3">
-        <description>Search existing issues for duplicates; none found</description>
+        <description>Search existing issues for duplicates; none found.</description>
       </step>
       <step number="4">
-        <description>Present drafted issue to user and get approval</description>
+        <description><strong>Hard Stop Gate #1:</strong> Present drafted issue Markdown to the user and halt execution. Do NOT call <code>create_issue</code> in the same turn.</description>
       </step>
       <step number="5">
-        <description>Create issue on GitHub via MCP tool (<code>create_issue</code>), receiving issue #123 (left open)</description>
+        <description>Upon user approval, call GitHub MCP <code>create_issue</code> tool, receiving issue #123 (left open).</description>
       </step>
       <step number="6">
-        <description>Create branch <code>issue-123-offline-settings-fix</code>, hand off fix task to Orchestrator/Code mode with strict sub-mode instructions (modify files and run local tests only; no commit or push)</description>
+        <description>Ask user if we should attempt a fix. Upon approval, create branch <code>issue-123-offline-settings-fix</code> (following strict slug convention). Hand off fix task to Orchestrator/Code mode with strict sub-mode instructions (modify files and run local tests only; no commit or push).</description>
       </step>
       <step number="7">
-        <description>Upon return from fix mode, inspect git diff and test output. Hit Hard Stop Gate #3: present review to user and wait for explicit approval.</description>
+        <description>Upon return from fix mode, inspect git diff and test output. Hit <strong>Hard Stop Gate #3</strong>: present review to user and wait for explicit approval before any commit, push, or PR creation.</description>
       </step>
       <step number="8">
-        <description>Upon approval, commit changes on branch <code>issue-123-offline-settings-fix</code> with raw reference <code>Fix settings crash when offline (Fixes #123)</code>, push branch to origin, and open PR #124 into main.</description>
+        <description>Upon approval, commit changes on branch <code>issue-123-offline-settings-fix</code> with raw reference <code>Fix settings crash when offline (Fixes #123)</code>, push branch to origin, and open PR #124 into main with standalone closing keyword <code>Fixes #123</code>.</description>
       </step>
       <step number="9">
-        <description>Execute Phase 6 post-merge cleanup: evaluate CAN_MERGE (true), offer PR merge to user, execute <code>merge_pull_request</code> upon approval, return local workspace to default branch via <code>git checkout main && git pull</code>, and delete remote feature branch <code>issue-123-offline-settings-fix</code> from origin.</description>
+        <description><strong>Mandatory Phase 6 Lifecycle Completion:</strong> Evaluate CAN_MERGE (true), offer PR merge to user, execute <code>merge_pull_request</code> upon approval, return local workspace to default branch via <code>git checkout main && git pull</code>, and delete local/remote feature branch <code>issue-123-offline-settings-fix</code> from origin.</description>
       </step>
     </workflow>
     
     <completion>
-      Successfully created GitHub issue #123, implemented and tested fix on branch <code>issue-123-offline-settings-fix</code> (without unauthorized sub-mode commits), passed Hard Stop Gate #3, committed, pushed, opened PR #124, merged PR, restored local workspace to main via <code>git checkout main && git pull</code>, and deleted remote feature branch. Task successfully completed.
+      Successfully created GitHub issue #123 (after Hard Stop Gate #1 approval), implemented and tested fix on branch <code>issue-123-offline-settings-fix</code> (without unauthorized sub-mode commits), passed Hard Stop Gate #3, committed, pushed, opened PR #124, executed Phase 6 (CAN_MERGE evaluation, merged PR, restored local workspace to main via <code>git checkout main && git pull</code>, and deleted remote feature branch). Task successfully completed.
     </completion>
   </example>
 </complete_examples>
