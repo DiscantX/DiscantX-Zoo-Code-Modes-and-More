@@ -41,8 +41,8 @@
         <step>Store Acceptance Criteria internally in your private memory/scratchpad for later verification.</step>
         <step>
           <strong>MANDATORY HARD STOP GATE #1 (STRICT ISOLATION):</strong> 
-          Display the drafted issue Markdown to the user and <strong>HALT EXECUTION</strong>. 
-          <strong>CRITICAL RULE:</strong> The execution agent is <strong>STRICTLY PROHIBITED</strong> from calling the <code>create_issue</code> MCP tool in the same turn it generates or revises the issue draft. You MUST output the drafted Markdown and stop to wait for explicit human approval before any issue creation tool can be invoked.
+          Display the drafted issue Markdown to the user and invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve and create issue", "Request edits to draft", "Cancel"]</code>. 
+          <strong>CRITICAL RULE:</strong> The execution agent is <strong>STRICTLY PROHIBITED</strong> from calling the <code>create_issue</code> MCP tool in the same turn it generates or revises the issue draft. You MUST present the draft, invoke <code>ask_followup_question</code>, and halt execution until the user responds.
         </step>
       </steps>
     </phase>
@@ -71,7 +71,7 @@
     <phase name="fix_coordination">
       <description>Coordinate fix implementation on a feature branch</description>
       <steps>
-        <step><strong>MANDATORY GATE:</strong> Ask the user: "Would you like me to attempt a fix for issue #{number}?"</step>
+        <step><strong>MANDATORY GATE #2:</strong> Prompt the user using the <code>ask_followup_question</code> tool with choices: <code>["Yes, attempt fix on new feature branch", "No, leave issue open without immediate fix"]</code>.</step>
         <step><strong>CONDITIONAL ASSIGNMENT:</strong>
           <ul>
             <li><strong>If User Declines Fix (Issue stays open without immediate resolution):</strong> If <code>STAKEHOLDER_USERNAME</code> was successfully resolved, assign them to the issue. If empty, ask the user if they wish to assign a specific GitHub user.</li>
@@ -97,7 +97,7 @@
         <step>Verify implementation against your internal Acceptance Criteria checklist.</step>
         <step>
           <strong>MANDATORY HARD STOP GATE #3:</strong> Present the fix review (git diff and test output) to the user. 
-          <strong>CRITICAL: Require explicit user confirmation at Gate #3 BEFORE executing <code>git commit</code>, <code>git push</code>, and <code>create_pull_request</code>. Sub-modes are strictly prohibited from performing these operations.</strong>
+          <strong>CRITICAL:</strong> Display the <code>git diff</code> and test execution summary to the user, then invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve commit, push, and open PR", "Request additional changes", "Abort fix"]</code>. Explicit user approval via <code>ask_followup_question</code> is REQUIRED BEFORE executing <code>git commit</code>, <code>git push</code>, or <code>create_pull_request</code>. Sub-modes are strictly prohibited from performing these operations.
         </step>
         <step>
           Upon explicit approval, commit changes on branch <code>issue-{number}-{short-slug}</code> with raw plain-text issue references in the commit message, including the primary issue and all confirmed open duplicates (e.g., <code>Fix issue logic (Fixes #{number}, Fixes #11, Fixes #12)</code>). 
@@ -123,28 +123,28 @@
     </phase>
     
     <phase name="post_merge_cleanup">
-      <description>Mandatory Phase 6: Handle merge evaluation, execute PR merge if permitted, restore local workspace to default branch via git checkout main && git pull, and delete remote feature branch</description>
+      <description>Mandatory Phase 6: Sequential post-PR merge evaluation, workspace restoration, and remote branch cleanup</description>
       <steps>
-        <step>
+        <step number="1">
           <strong>FORBIDDEN COMPLETION RULE:</strong> Calling completion tools (<code>attempt_completion</code>) or declaring a task complete immediately after opening or pushing a PR is strictly forbidden. Phase 6 execution is mandatory.
         </step>
-        <step>
-          <strong>CONDITIONAL MERGE GATE (CAN_MERGE Evaluation):</strong>
-          <ul>
-            <li>
-              <strong>If CAN_MERGE is true:</strong> Ask the user: "PR #{pr_number} is ready. Would you like me to merge it into main now to automatically close Issue #{issue_number} via native webhook?" 
-              If approved, call the GitHub MCP <code>merge_pull_request</code> tool.
-            </li>
-            <li>
-              <strong>If CAN_MERGE is false:</strong> Provide the PR link to the user and explain that a maintainer with merge permissions must review and merge it.
-            </li>
-          </ul>
+        <step number="2">
+          <strong>CAN_MERGE EVALUATION & MERGE GATE:</strong> Check the <code>CAN_MERGE</code> flag evaluated during Phase 1.
+          If <code>CAN_MERGE == true</code>, prompt the user using <code>ask_followup_question</code> with choices: <code>["Merge PR now and clean up workspace", "Leave PR open for maintainer review"]</code>.
+          If <code>CAN_MERGE == false</code>, inform the user that maintainer review is required and proceed directly to Step 4 (Workspace Restoration).
         </step>
-        <step>
-          <strong>MANDATORY WORKSPACE RESTORATION:</strong> Restore the local workspace to the default branch immediately following PR/merge steps by executing <code>git checkout main && git pull</code>. Never leave the local workspace parked on a feature branch.
+        <step number="3">
+          <strong>MERGE EXECUTION:</strong> If user approves merge at Step 2, call GitHub MCP <code>merge_pull_request(merge_method='squash')</code>.
         </step>
-        <step>Delete the local and remote feature branch <code>issue-{number}-{short-slug}</code> post-merge/cleanup.</step>
-        <step><strong>MANDATORY PHASE 6 COMPLETION RULE:</strong> Never call <code>attempt_completion</code> or declare the task finished until Phase 6 is fully executed (CAN_MERGE evaluated, PR merge offered/executed, local workspace returned to main via <code>git checkout main && git pull</code>, and remote feature branch deleted).</step>
+        <step number="4">
+          <strong>MANDATORY WORKSPACE RESTORATION:</strong> Restore local workspace to main default branch immediately by executing CLI command: <code>git checkout main &amp;&amp; git pull</code>. Never leave the local workspace on a feature branch.
+        </step>
+        <step number="5">
+          <strong>BRANCH CLEANUP:</strong> Delete feature branch locally and remotely by executing CLI command: <code>git branch -d issue-{number}-{short-slug} &amp;&amp; git push origin --delete issue-{number}-{short-slug}</code>.
+        </step>
+        <step number="6">
+          <strong>PHASE 6 COMPLETION RULE:</strong> Only after steps 1–5 are completely executed may the agent call <code>attempt_completion</code> to finalize the task.
+        </step>
       </steps>
     </phase>
   </main_workflow>
