@@ -1,82 +1,48 @@
-# ZooCode GitHub Issue Mode — Comprehensive Test Matrix & Verification Checklist
+### ZooCode GitHub Issue Mode — Comprehensive Test Matrix & Verification Checklist
 
-## System Architecture & Role Definitions
-* **Execution Agent (GitHub Issue Mode):** Reads XML prompts (`1_workflow.xml`, `2_best_practices.xml`, etc.) to parse user prompts, handle issue creation, search duplicates, coordinate code fixes, create Pull Requests, and manage workspace cleanup.
-* **Mode Writer AI:** Updates and refines the core system prompt configuration files based on evaluation run feedback.
-* **Architect / Oversight AI:** Evaluates live execution traces against protocol guardrails, identifies process defects, and maintains system verification matrices.
+#### Instructions
+Refer to the `AGENTS.md` in the root of this repository for instructions on how to use this document.
 
----
+#### Comprehensive Test Matrix
 
-## Core Protocol Rules & Guardrails
-* **Internal-Only Acceptance Criteria (AC):** Acceptance Criteria are extracted strictly for private scratchpad verification and **MUST NEVER** leak into public GitHub issue bodies.
-* **Identity & Permission Resolution:** Resolve `STAKEHOLDER_USERNAME` via `git config user.email` and GitHub search API (`{email}+in:email`). Evaluate `CAN_MERGE` permission flags (`admin`, `write`, `maintain` vs. `read`).
-* **Conditional Issue Assignment:** Assign `STAKEHOLDER_USERNAME` **ONLY** if an issue remains open without an immediate fix. Leave unassigned if an immediate code fix is initiated.
-* **Mandatory Hard Stop Approval Gates:**
-  1. **Gate #1:** Stop and wait for explicit human approval on drafted issue Markdown before calling `create_issue`.
-  2. **Gate #2:** Stop and wait for explicit human approval before creating branches or attempting code modifications.
-  3. **Gate #3:** Stop and wait for explicit human review of `git diff` and test suite execution in GitHub Issue Mode before calling `git push` or `create_pull_request`. Sub-modes (Code/Orchestrator) are strictly prohibited from pushing or creating PRs directly.
-* **Branch Naming Standard:** Dedicated feature branches **MUST** strictly follow the pattern `issue-{number}-{short-slug}` (e.g., `issue-14-analytics-division-fix`). Standalone `issue-{number}` or generic prefixes (`fix/`, `feature/`) are prohibited.
-* **Native Webhook Automation:** **NEVER** manually close issues via the API. Pull Request descriptions must end with standalone plain-text keywords (e.g., `Fixes #14`) on their own line to trigger native GitHub webhook closures.
-* **Permission-Aware Merging:** Offer to execute PR merges via `merge_pull_request` **ONLY** if `CAN_MERGE` evaluates to `true`.
-* **Workspace Hygiene & Lifecycle Completion:** A task **CANNOT** be marked as completed upon PR creation. The agent must restore the local workspace (`git checkout main && git pull`) and offer remote feature branch cleanup post-merge.
+##### Phase 1: Initialization & Identity Resolution
+| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Run 1 | Run 2 | Run 3 | Overall Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-1.1** | Standard Identity Resolution | Valid `remote.origin.url`, `git config user.email` returns active email. | • Resolves `STAKEHOLDER_USERNAME` via GitHub API (`{email}+in:email`).<br>• Evaluates `CAN_MERGE` permission flag based on repo role. | UNTESTED | UNTESTED | UNTESTED | **UNTESTED** |
+| **TC-1.2** | Unset/Missing Git Email | `git config user.email` returns empty string. | • Fallback: Sets `STAKEHOLDER_USERNAME` to repository owner.<br>• Prompts for manual override if user lookup fails. | UNTESTED | UNTESTED | UNTESTED | **UNTESTED** |
+| **TC-1.3** | Invalid Git Remote URL | Invalid or missing `remote.origin.url`. | • Handles parsing error gracefully.<br>• Asks user to manually provide owner/repo details. | UNTESTED | UNTESTED | UNTESTED | **UNTESTED** |
 
----
+##### Phase 2: Issue Drafting & Acceptance Criteria Isolation
+| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Run 1 | Run 2 | Run 3 | Overall Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-2.1** | Internal AC Protection | Bug report contains private acceptance criteria. | • Strips AC from public GitHub Markdown body.<br>• Stores AC in private scratchpad memory only[cite: 8, 10]. | PASS | UNTESTED | UNTESTED | **IN PROGRESS** |
+| **TC-2.2** | Gate #1 Stop (Draft Review) | Agent drafts public GitHub issue. | • **HARD STOP:** Displays draft to user.<br>• **WAITS** for explicit confirmation before calling `create_issue`[cite: 8, 10]. | FAIL | UNTESTED | UNTESTED | **FAIL** |
+| **TC-2.3** | Free-Form Edit Routing | User provides text feedback or requested edits on the draft. | • Pauses, updates draft per user input, and re-presents Gate #1 review[cite: 9]. | UNTESTED | UNTESTED | UNTESTED | **UNTESTED** |
 
-## Comprehensive Test Matrix
+##### Phase 3: Duplicate Detection & Search
+| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Run 1 | Run 2 | Run 3 | Overall Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-3.1** | Duplicate Interception & Search | Incoming bug matches existing open/closed issues. | • Executes search using broad 1–2 word primary topic terms.<br>• Presents choice menu if matches found[cite: 9]. | UNTESTED | UNTESTED | UNTESTED | **UNTESTED** |
+| **TC-3.2** | No Duplicates Found | Search API returns zero relevant hits. | • Search returns zero relevant hits.<br>• Proceeds directly to issue creation upon approval[cite: 8, 10]. | PASS | UNTESTED | UNTESTED | **IN PROGRESS** |
+| **TC-3.3** | Duplicate Selection / Linking | User selects an existing duplicate from search results. | • Links or comments on the existing issue appropriately instead of creating a redundant one. | UNTESTED | UNTESTED | UNTESTED | **UNTESTED** |
 
-### Phase 1: Initialization & Identity Resolution
+##### Phase 4: Branching & Fix Authorization
+| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Run 1 | Run 2 | Run 3 | Overall Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-4.1** | Gate #2 & Immediate Fix | User approves proceeding with a code fix. | • **HARD STOP:** Asks user before modifying code or creating branches[cite: 8, 10]. | PASS | UNTESTED | UNTESTED | **IN PROGRESS** |
+| **TC-4.2** | Conditional Issue Assignment | Fix is deferred or declined by user at Gate #2. | • Executes `add_assignees` for `STAKEHOLDER_USERNAME` when issue remains open without immediate fix[cite: 9, 10]. | UNTESTED | UNTESTED | UNTESTED | **UNTESTED** |
+| **TC-4.3** | Branch Naming Convention | Feature branch creation requested. | • Creates branch strictly following pattern `issue-{number}-{short-slug}`.<br>• Rejects generic prefixes (`fix/`, `feature/`)[cite: 9, 10]. | FAIL | UNTESTED | UNTESTED | **FAIL** |
 
-| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Pass 1 Status | Pass 2 Status | Overall Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TC-1.1** | Standard Identity Resolution | Valid `remote.origin.url`, `git config user.email` returns active email. | • Resolves `STAKEHOLDER_USERNAME` via GitHub API (`{email}+in:email`).<br>• Evaluates `CAN_MERGE` permission flag based on repo role. | PASS | PASS | **PASS** |
-| **TC-1.2** | Unset/Missing Git Email | `git config user.email` returns empty string. | • Fallback: Sets `STAKEHOLDER_USERNAME` to repository owner.<br>• Prompts for manual override if user lookup fails. | UNTESTED | UNTESTED | **UNTESTED** |
-| **TC-1.3** | Invalid Git Remote URL | Invalid or missing `remote.origin.url`. | • Handles parsing error gracefully.<br>• Asks user to manually provide `owner/repo` details. | UNTESTED | UNTESTED | **UNTESTED** |
+##### Phase 5: Pre-Push Validation & Pull Request Automation
+| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Run 1 | Run 2 | Run 3 | Overall Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-5.1** | Test Suite Execution | Code fix applied locally. | • Runs unit test suite (`test_suite.py`) and verifies all tests pass prior to commit. | UNTESTED | UNTESTED | UNTESTED | **UNTESTED** |
+| **TC-5.2** | Gate #3 Pre-Push Review | Fix committed locally, ready for push and PR. | • **HARD STOP:** Presents `git diff` and test suite execution results.<br>• Waits for user review before calling `git push` or `create_pull_request`[cite: 8, 10]. | FAIL | UNTESTED | UNTESTED | **FAIL** |
+| **TC-5.3** | Native PR Automation | Pull request creation. | • Embeds plain-text `Fixes #X` in PR description.<br>• Does NOT manually call Issues API to close the issue[cite: 8, 10]. | PASS | UNTESTED | UNTESTED | **IN PROGRESS** |
 
----
-
-### Phase 2: Issue Drafting & Hard Approval Gate #1
-
-| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Pass 1 Status | Pass 2 Status | Overall Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TC-2.1** | Internal AC Protection | Prompt contains explicit Acceptance Criteria. | • **CRITICAL:** Strips AC from public GitHub Markdown body.<br>• Stores AC in private scratchpad memory only. | PASS | PASS | **PASS** |
-| **TC-2.2** | Gate #1 Stop (Draft Review) | Public issue draft formatted in Markdown. | • **HARD STOP:** Displays draft to user.<br>• **WAITS** for explicit confirmation before calling `create_issue`. | PASS | PASS | **PASS** |
-| **TC-2.3** | User Rejects Issue Draft | User requests edits to the issue summary or steps. | • Revises Markdown internally.<br>• Re-presents draft and pauses again without calling API. | UNTESTED | UNTESTED | **UNTESTED** |
-
----
-
-### Phase 3: Duplicate Detection & Creation Routing
-
-| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Pass 1 Status | Pass 2 Status | Overall Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TC-3.1** | Duplicate Found | Similar issue/PR exists in repository. | • Intercepts creation.<br>• Presents choices: (a) Link as related, (b) Comment on existing, (c) Create new anyway. | PASS | N/A *(0 hits)* | **PASS** |
-| **TC-3.2** | Semantic Duplicate Pre-Analysis *(New)* | Search API returns candidate matches. | • Provides a 1-sentence semantic comparison analyzing candidate matches before presenting choice menu. | PENDING | N/A *(0 hits)* | **PENDING** |
-
----
-
-### Phase 4: Fix Coordination, Assignment, & Branching
-
-| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Pass 1 Status | Pass 2 Status | Overall Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TC-4.1** | Gate #2 & Immediate Fix | User approves immediate fix attempt. | • **HARD STOP:** Asks user before modifying code.<br>• **Leaves issue UNASSIGNED**. | PASS | PASS | **PASS** |
-| **TC-4.2** | Deferred Fix Execution | User declines immediate fix. | • **CONDITIONAL ASSIGNMENT:** Assigns `STAKEHOLDER_USERNAME` to open issue.<br>• Terminates session safely. | PASS | UNTESTED | **PASS** |
-| **TC-4.3** | Strict Branch Naming | Branch creation step triggered. | • Enforces strict pattern: `issue-{number}-{short-slug}`.<br>• **REJECTS** standalone `issue-{number}` or `fix/` prefixes. | PASS | PASS | **PASS** |
-
----
-
-### Phase 5: Verification & Gate #3 (PR Submission)
-
-| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Pass 1 Status | Pass 2 Status | Overall Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TC-5.1** | Native Webhook & PR Creation | Code edits and local tests completed. | • Creates Pull Request with plain-text keyword (`Fixes #X`).<br>• **NEVER** closes issue directly via API `update_issue`. | PASS | PASS | **PASS** |
-| **TC-5.2** | Gate #3 Stop (Pre-Push Review) | Diff and test suite execution ready. | • **HARD STOP:** Returns control to GitHub Issue Mode.<br>• Displays diff/tests and **WAITS** for approval before `git push`/PR creation. | PASS | PASS | **PASS** |
-| **TC-5.3** | Multi-Duplicate Sweep *(New)* | Multiple duplicate issues confirmed during resolution. | • Includes closing references (`Fixes #X, Fixes #Y`) for all confirmed duplicate issues in PR description and commit body. | PENDING | UNTESTED | **PENDING** |
-
----
-
-### Phase 6: Permission-Aware Merging & Workspace Cleanup
-
-| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Pass 1 Status | Pass 2 Status | Overall Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TC-6.1** | Merge Execution (`CAN_MERGE = true`) | PR created and user has write/admin access. | • Prompts user to merge PR.<br>• Calls `merge_pull_request` upon confirmation to trigger automated issue closure. | PASS | UNTESTED | **PASS** |
-| **TC-6.2** | Read-Only User (`CAN_MERGE = false`) | PR created but user lacks write access. | • Suppresses merge offer.<br>• Outputs PR URL and instructs user to request maintainer review. | UNTESTED | UNTESTED | **UNTESTED** |
-| **TC-6.3** | Workspace Restoration & Branch Cleanup | PR merged or session concluding. | • Switches checkout back to default branch (`git checkout main && git pull`).<br>• Deletes local and remote feature branches. | PASS | PASS | **PASS** |
+##### Phase 6: Merging & Workspace Restoration
+| Test ID | Scenario / Path | Inputs / Conditions | Expected Behavior & Assertions | Run 1 | Run 2 | Run 3 | Overall Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-6.1** | Permission-Aware Merge Execution | PR created and tests verified. | • Prompts user to confirm merge.<br>• Calls `merge_pull_request` only if `CAN_MERGE` is true[cite: 8, 9, 10]. | FAIL | UNTESTED | UNTESTED | **FAIL** |
+| **TC-6.2** | Deferred Merge Handling | User lacks merge permissions or defers merge. | • Leaves PR open for repository maintainer review without attempting unauthorized merge. | UNTESTED | UNTESTED | UNTESTED | **UNTESTED** |
+| **TC-6.3** | Workspace Restoration & Cleanup | Task completed / PR merged. | • Restores local workspace (`git checkout main && git pull`).<br>• Cleans up local/remote feature branches[cite: 8, 9, 10]. | FAIL | UNTESTED | UNTESTED | **FAIL** |
