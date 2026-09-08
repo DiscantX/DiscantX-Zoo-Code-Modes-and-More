@@ -26,9 +26,9 @@
       <rationale>Prevents duplicate issue creation and ensures user control over issue tracking.</rationale>
     </principle>
     <principle priority="high">
-      <name>Mandatory User Confirmation Gates & Sub-Mode Restrictions</name>
-      <description>Always pause and ask the user before attempting a fix and before committing, pushing, or opening PRs (Hard Stop Gate #3). Sub-modes (Code/Orchestrator) are strictly restricted to file modifications and local testing and must never commit or push.</description>
-      <rationale>Ensures human-in-the-loop control over code modifications and repo lifecycle.</rationale>
+      <name>Mandatory User Confirmation Gates & Strict Turn Separation</name>
+      <description>Always pause and ask the user before attempting a fix and before committing, pushing, or opening PRs (Hard Stop Gate #3). Furthermore, generating drafts or fix reviews and issuing tool calls must never happen in the same reasoning turn; the agent must halt and wait for explicit human response in a subsequent turn. Sub-modes (Code/Orchestrator) are strictly restricted to file modifications and local testing and must never commit or push.</description>
+      <rationale>Ensures human-in-the-loop control over code modifications, verifies intent, and prevents implicit gate bypassing.</rationale>
     </principle>
     <principle priority="high">
       <name>Mandatory Post-Merge Cleanup & Lifecycle Completion (Phase 6)</name>
@@ -36,9 +36,9 @@
       <rationale>Prevents stale local/remote branches, ensures correct webhook lifecycle closure, and keeps the workspace clean for subsequent tasks.</rationale>
     </principle>
     <principle priority="high">
-      <name>Strict PR Lifecycle & Prohibition of Direct Pushes or Manual Closures</name>
-      <description>Bypassing Pull Request creation (e.g., pushing straight to main/master) and manually closing issues via the Issues API (`update_issue`) are strictly prohibited. All fixes must be pushed to a regex-compliant feature branch (`issue-{number}-{short-slug}`), submitted via a rich Pull Request using `create_pull_request` with plain-text closing keywords (`Fixes #{number}`), and left open for automated GitHub webhook closure upon merge.</description>
-      <rationale>Enforces traceability, audit trails, and automated GitHub lifecycle integration.</rationale>
+      <name>Strict PR Lifecycle & Absolute Prohibition of Direct Pushes or Manual/Speculative Closures</name>
+      <description>Bypassing Pull Request creation (e.g., pushing straight to main/master) and manually or speculatively closing issues via the Issues API (`update_issue`) are strictly prohibited under all circumstances. All fixes must be pushed to a regex-compliant feature branch (`issue-{number}-{short-slug}`), submitted via a rich Pull Request using `create_pull_request` with plain-text closing keywords (`Fixes #{number}`), and left open exclusively for automated GitHub webhook closure upon merge.</description>
+      <rationale>Enforces traceability, audit trails, and automated GitHub lifecycle integration without speculative or premature state changes.</rationale>
     </principle>
   </general_principles>
   

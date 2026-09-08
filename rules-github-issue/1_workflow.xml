@@ -41,9 +41,9 @@
         <step>Include sections: Summary, Steps to Reproduce, Expected Behavior, and Actual Behavior. <strong>Do NOT include Acceptance Criteria in the GitHub issue body.</strong></step>
         <step>Store Acceptance Criteria internally in your private memory/scratchpad for later verification.</step>
         <step>
-          <strong>MANDATORY HARD STOP GATE #1 (STRICT ISOLATION):</strong> 
+          <strong>MANDATORY HARD STOP GATE #1 (STRICT ISOLATION & TURN SEPARATION):</strong> 
           Display the drafted issue Markdown to the user and invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve and create issue", "Request edits to draft", "Cancel"]</code>. 
-          <strong>CRITICAL RULE:</strong> The execution agent is <strong>STRICTLY PROHIBITED</strong> from calling the <code>create_issue</code> MCP tool in the same turn it generates or revises the issue draft. You MUST present the draft, invoke <code>ask_followup_question</code>, and halt execution until the user responds.
+          <strong>CRITICAL RULE:</strong> The execution agent is <strong>STRICTLY PROHIBITED</strong> from calling the <code>create_issue</code> MCP tool in the same reasoning turn it generates or revises the issue draft. You MUST present the draft, invoke <code>ask_followup_question</code>, and halt execution until the user responds in a subsequent turn. Treating "I have decided this is correct" as authorization without an explicit response captured from the user is a fatal protocol violation.
         </step>
       </steps>
     </phase>
@@ -67,7 +67,7 @@
         <step>Upon explicit user approval at Hard Stop Gate #1, call GitHub MCP <code>create_issue</code> tool with the clean public description (Summary, Steps, Expected/Actual Behavior only).</step>
         <step>
           Record the created issue number, title, and HTML URL. Ensure the issue remains OPEN. 
-          <strong>STRICT PROHIBITION: Never call <code>github.update_issue</code> to set <code>"state": "closed"</code> or manually close issues via API. Issues must ONLY be closed automatically via GitHub native PR merge webhooks.</strong>
+          <strong>STRICT PROHIBITION (NO DIRECT API CLOSURE):</strong> Never call <code>github.update_issue</code> to set <code>"state": "closed"</code>, nor attempt speculative, optimistic, or manual issue closure via API under any circumstances. Issues must ONLY be closed automatically via GitHub native PR merge webhooks triggered by plain-text keywords in merged pull requests.
         </step>
       </steps>
     </phase>
@@ -100,8 +100,8 @@
         <step>Upon return from Code/Orchestrator mode, inspect git diff, test results, and status.</step>
         <step>Verify implementation against your internal Acceptance Criteria checklist.</step>
         <step>
-          <strong>MANDATORY HARD STOP GATE #3:</strong> Present the fix review (git diff and test output) to the user. 
-          <strong>CRITICAL:</strong> Display the <code>git diff</code> and test execution summary to the user, then invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve commit, push, and open PR", "Request additional changes", "Abort fix"]</code>. Explicit user approval via <code>ask_followup_question</code> is REQUIRED BEFORE executing <code>git commit</code>, <code>git push</code>, or <code>create_pull_request</code>. Sub-modes are strictly prohibited from performing these operations.
+          <strong>MANDATORY HARD STOP GATE #3 (STRICT TURN SEPARATION):</strong> Present the fix review (git diff and test output) to the user. 
+          <strong>CRITICAL:</strong> Display the <code>git diff</code> and test execution summary to the user, then invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve commit, push, and open PR", "Request additional changes", "Abort fix"]</code>. Explicit user approval via <code>ask_followup_question</code> captured in a prior turn is REQUIRED BEFORE executing <code>git commit</code>, <code>git push</code>, or <code>create_pull_request</code>. Combining diff presentation and tool execution in the same reasoning turn is strictly prohibited. Sub-modes are strictly prohibited from performing these operations.
         </step>
         <step>
           Upon explicit approval, commit changes on branch <code>issue-{number}-{short-slug}</code> with raw plain-text issue references in the commit message, including the primary issue and all confirmed open duplicates (e.g., <code>Fix issue logic (Fixes #{number}, Fixes #11, Fixes #12)</code>). 
@@ -121,7 +121,7 @@
           </ul>
         </step>
         <step>
-          <strong>STRICT PROHIBITION AGAINST DIRECT API ISSUE CLOSURE:</strong> NEVER call the GitHub Issues API or use MCP tools (such as <code>github.update_issue</code> with <code>"state": "closed"</code>) to manually close the issue. Leave the issue OPEN so GitHub native PR merge webhooks close it automatically.
+          <strong>STRICT PROHIBITION AGAINST DIRECT API OR SPECULATIVE ISSUE CLOSURE:</strong> NEVER call the GitHub Issues API or use MCP tools (such as <code>github.update_issue</code> with <code>"state": "closed"</code>) to manually, speculatively, or optimistically close the issue. Leave the issue OPEN so GitHub native PR merge webhooks close it automatically upon successful merge.
         </step>
       </steps>
     </phase>

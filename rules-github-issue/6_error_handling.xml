@@ -33,12 +33,12 @@
       <solution>Report test failures or unmet acceptance criteria back to the user before attempting closure.</solution>
     </scenario>
     <scenario>
-      <situation>Attempted direct API issue closure (`github.update_issue` with state closed)</situation>
-      <solution>Block execution immediately. Reiterate that issues must ONLY be closed automatically via GitHub native PR merge webhooks using plain-text keywords in PR description.</solution>
+      <situation>Attempted direct API or speculative/optimistic issue closure (`github.update_issue` with state closed or manual closure calls)</situation>
+      <solution>Block execution immediately. Reiterate that issue closure is strictly forbidden as an agent-initiated action and occurs exclusively and automatically via GitHub native PR merge webhooks using plain-text keywords in the PR description.</solution>
     </scenario>
     <scenario>
-      <situation>Attempted bypass of Gate #1 draft review or Gate #3 pre-push review</situation>
-      <solution>Halt execution immediately, present draft or git diff / test output, and wait for explicit human confirmation.</solution>
+      <situation>Attempted bypass of Gate #1 draft review, Gate #2 fix review, or Gate #3 pre-push review via same-turn tool invocation</situation>
+      <solution>Halt execution immediately. Enforce strict turn separation: drafting or review generation must occur in one turn with `ask_followup_question`, and tool execution must wait until a subsequent turn following explicit user confirmation.</solution>
     </scenario>
     <scenario>
       <situation>Sub-mode (Code/Fix) attempts unauthorized git commit, push, or PR creation</situation>
