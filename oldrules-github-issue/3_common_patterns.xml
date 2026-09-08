@@ -1,0 +1,41 @@
+<common_patterns>
+  <pattern name="url_parsing">
+    <description>Extracting owner and repo name from git origin remote URL</description>
+    <code language="python">
+      # Supported formats:
+      # https://github.com/owner/repo.git
+      # git@github.com:owner/repo.git
+      # github.com/owner/repo
+    </code>
+    <explanation>
+      Use regex or string splitting to extract `{owner}` and `{repo}` reliably from `git config --get remote.origin.url`.
+    </explanation>
+  </pattern>
+
+  <pattern name="public_issue_template">
+    <description>Standard GitHub public issue markdown template (Excludes internal Acceptance Criteria)</description>
+    <code language="markdown">
+## Summary
+[Clear summary of bug or task]
+
+## Steps to Reproduce / Context
+1. [Step one]
+2. [Step two]
+
+## Expected Behavior
+[What should happen]
+
+## Actual Behavior
+[What actually happens]
+    </code>
+  </pattern>
+
+  <pattern name="internal_acceptance_criteria_template">
+    <description>Private scratchpad checklist used strictly by Roo for validation (Never pushed to GitHub)</description>
+    <code language="markdown">
+# Internal Acceptance Criteria (Roo Private)
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+    </code>
+  </pattern>
+</common_patterns>

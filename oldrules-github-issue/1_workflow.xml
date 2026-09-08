@@ -1,0 +1,80 @@
+<workflow_instructions>
+  <mode_overview>
+    Manage GitHub issues from raw bug reports or tasks, create public-facing issues (strictly excluding internal acceptance criteria), coordinate code fixes, verify correctness, and close issues upon explicit user approval.
+  </mode_overview>
+
+  <initialization_steps>
+    <step number="1">
+      <action>Analyze user prompt</action>
+      <details>
+        Parse the incoming bug report or task description. Identify the core problem, expected behavior, and reproduction steps.
+        Extract internal Acceptance Criteria for Roo's private validation checklist. **CRITICAL: Acceptance Criteria must NEVER be published to GitHub or included in the public issue body.**
+      </details>
+    </step>
+
+    <step number="2">
+      <action>Retrieve Repository Details</action>
+      <details>
+        Run git command: <code>git config --get remote.origin.url</code>.
+        Parse the remote URL to extract repository owner and repo name.
+      </details>
+    </step>
+  </initialization_steps>
+
+  <main_workflow>
+    <phase name="issue_drafting">
+      <description>Copyedit and structure the public issue (without Acceptance Criteria)</description>
+      <steps>
+        <step>Rewrite user prompt into professional GitHub Markdown format</step>
+        <step>Include sections: Summary, Steps to Reproduce, Expected Behavior, and Actual Behavior. **Do NOT include Acceptance Criteria in the GitHub issue body.**</step>
+        <step>Store Acceptance Criteria internally in your private memory/scratchpad for later verification.</step>
+        <step>Present the drafted issue to the user for approval</step>
+      </steps>
+    </phase>
+
+    <phase name="duplicate_search">
+      <description>Search existing issues for duplicates</description>
+      <steps>
+        <step>Query GitHub issues using MCP tools (e.g., search_issues or list_issues)</step>
+        <step>Compare open/closed issues with keywords from the drafted issue</step>
+        <step>If similar issue found, present options to user: (a) Link as related, (b) Comment on existing issue instead, or (c) Create new issue</step>
+      </steps>
+    </phase>
+
+    <phase name="issue_creation">
+      <description>Create issue on GitHub</description>
+      <steps>
+        <step>Upon user approval, call GitHub MCP `create_issue` tool with the clean public description (Summary, Steps, Expected/Actual Behavior only)</step>
+        <step>Record the created issue number, title, and HTML URL</step>
+      </steps>
+    </phase>
+
+    <phase name="fix_coordination">
+      <description>Coordinate fix implementation with mandatory user confirmation</description>
+      <steps>
+        <step><strong>MANDATORY GATE:</strong> Ask the user: "Would you like me to attempt a fix for issue #{number}?"</step>
+        <step>If approved, create a dedicated feature branch named `issue-{number}`</step>
+        <step>Hand off task to Orchestrator or Code mode to implement the fix</step>
+      </steps>
+    </phase>
+
+    <phase name="verification_and_closure">
+      <description>Verify, review, and close with mandatory user confirmation</description>
+      <steps>
+        <step>Upon return from fix mode, inspect git diff, test results, and status</step>
+        <step>Verify implementation against your internal Acceptance Criteria checklist</step>
+        <step><strong>MANDATORY GATE:</strong> Present the fix review (git diff and test results) to the user and ask: "Is the fix correct, and should we proceed with committing, pushing, and closing the issue?"</step>
+        <step>Upon explicit user approval, commit changes with issue reference in message (e.g., `Fixes #{number}: ...`)</step>
+        <step>Optionally push commit to GitHub (prompt user if needed)</step>
+        <step><strong>CRITICAL RULE FOR CLOSING:</strong> Close the issue on GitHub using commit reference or MCP tools. **NEVER overwrite the issue body or description.** Leave the original issue text pristine and intact.</step>
+      </steps>
+    </phase>
+  </main_workflow>
+
+  <completion_criteria>
+    <criterion>Issue created on GitHub without leaking internal acceptance criteria</criterion>
+    <criterion>User explicitly confirmed attempting the fix before code modifications</criterion>
+    <criterion>Code fix verified against internal acceptance criteria and approved by user</criterion>
+    <criterion>Changes committed and issue closed without overwriting original issue description</criterion>
+  </completion_criteria>
+</workflow_instructions>

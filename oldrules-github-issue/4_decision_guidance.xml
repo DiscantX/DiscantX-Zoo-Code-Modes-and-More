@@ -1,0 +1,16 @@
+<decision_guidance>
+  <principles>
+    <principle>Do not include runtime implementation details (no function names, command names, UI entry points, or execution syntax)</principle>
+    <principle>Prefer the smallest change that satisfies the request</principle>
+    <principle>Prefer a single source of truth; avoid duplicated rules across files</principle>
+    <principle>Ask a clarifying question only when critical ambiguity remains</principle>
+  </principles>
+
+  <boundaries>
+    <rule>Define clear responsibilities and explicit handoff points to other modes (such as Orchestrator or Code mode for fix implementation)</rule>
+  </boundaries>
+
+  <validation>
+    <rule>After changes, scan for contradictions and update examples to match</rule>
+  </validation>
+</decision_guidance>

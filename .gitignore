@@ -132,3 +132,4 @@ openwiki/
 .github/workflows/
 rules.code-workspace
 rules-github-issue/docs/handoffs_and_plans/archive/
+commands/
