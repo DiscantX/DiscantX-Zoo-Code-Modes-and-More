@@ -6,22 +6,22 @@
     
     <workflow>
       <step number="1">
-        <description>Analyze and copyedit prompt into structured GitHub issue format (excluding internal Acceptance Criteria).</description>
+        <description>Analyze and classify prompt as bug report. Extract internal Acceptance Criteria into private scratchpad.</description>
       </step>
       <step number="2">
-        <description>Retrieve repo owner and name via <code>git config --get remote.origin.url</code> (lazy identity lookup deferred until assignment is needed).</description>
+        <description>Retrieve repo owner and name via <code>git config --get remote.origin.url</code>. Retrieve repo labels (first issue draft of session) and semantically match bug to existing label <code>bug</code>.</description>
       </step>
       <step number="3">
         <description>Search existing issues for duplicates; none found.</description>
       </step>
       <step number="4">
-        <description><strong>Hard Stop Gate #1:</strong> Present drafted issue Markdown to the user and halt execution. Do NOT call <code>create_issue</code> in the same turn.</description>
+        <description><strong>Hard Stop Gate #1:</strong> Present drafted issue Markdown with proposed label <code>bug</code> to the user and halt execution. Do NOT call <code>create_issue</code> in the same turn.</description>
       </step>
       <step number="5">
-        <description>Upon user approval, call GitHub MCP <code>create_issue</code> tool, receiving issue #123 (left open; never manually closed via API).</description>
+        <description>Upon user approval, call GitHub MCP <code>create_issue</code> tool with label <code>bug</code>, receiving issue #123 (left open; never speculatively closed via API).</description>
       </step>
       <step number="6">
-        <description>Ask user if we should attempt a fix (Gate #2). Upon approval, leave issue unassigned, create branch <code>issue-123-offline-settings-fix</code> (following strict regex pattern <code>^issue-[0-9]+-[a-z0-9-]+$</code>), and delegate implementation exclusively to Code or Orchestrator mode (github-issue mode performs zero file editing directly).</description>
+        <description>Ask user if we should attempt a fix (Gate #2) using bug-specific phrasing ("Yes, attempt fix on new feature branch"). Upon approval, leave issue unassigned, create branch <code>issue-123-offline-settings-fix</code> (following strict regex pattern <code>^issue-[0-9]+-[a-z0-9-]+$</code>), and delegate implementation exclusively to Code or Orchestrator mode.</description>
       </step>
       <step number="7">
         <description>Upon return from fix mode, inspect git diff and test output. Hit <strong>Hard Stop Gate #3</strong>: present review to user and wait for explicit approval before any commit, push, or PR creation.</description>
@@ -30,12 +30,96 @@
         <description>Upon approval, commit changes on branch <code>issue-123-offline-settings-fix</code> with raw reference <code>Fix settings crash when offline (Fixes #123)</code>, push branch to origin (never pushing directly to main), and open a rich Pull Request via <code>create_pull_request</code> with standalone closing keyword <code>Fixes #123</code>.</description>
       </step>
       <step number="9">
-        <description><strong>Mandatory Phase 6 Lifecycle Completion:</strong> Offer PR merge directly without pre-evaluation. If approved, attempt <code>merge_pull_request</code> (handling any failure plainly without retries). Restore local workspace to default branch via <code>git checkout main && git pull</code>, and delete feature branch upon successful merge (or keep remote branch if merge failed).</description>
+        <description><strong>Mandatory Phase 6 Lifecycle Completion:</strong> Offer PR merge directly without pre-evaluation. If approved, attempt <code>merge_pull_request</code> (handling any failure plainly without retries). Restore local workspace to default branch via <code>git checkout main &amp;&amp; git pull</code>, and delete feature branch upon successful merge.</description>
       </step>
     </workflow>
     
     <completion>
-      Successfully created GitHub issue #123 (after Hard Stop Gate #1 approval), coordinated code fix exclusively via delegation to implementation sub-mode on strict regex-compliant branch <code>issue-123-offline-settings-fix</code>, passed Hard Stop Gate #3, committed, pushed to feature branch, opened rich PR via `create_pull_request`, executed Phase 6 (offered and attempted PR merge with graceful error handling, restored local workspace to main via <code>git checkout main && git pull</code>, and cleaned up branch). Task successfully completed.
+      Successfully created GitHub issue #123 with label <code>bug</code> (after Hard Stop Gate #1 approval), coordinated code fix exclusively via delegation on strict regex-compliant branch <code>issue-123-offline-settings-fix</code>, passed Hard Stop Gate #3, committed, pushed, opened rich PR via `create_pull_request`, executed Phase 6 (offered and attempted PR merge, restored local workspace to main via <code>git checkout main &amp;&amp; git pull</code>, and cleaned up branch). Task successfully completed.
+    </completion>
+  </example>
+
+  <example name="feature_request_workflow">
+    <scenario>
+      User requests a new feature: "Add dark mode toggle in navigation bar."
+    </scenario>
+
+    <workflow>
+      <step number="1">
+        <description>Analyze and classify prompt as feature request. Extract internal Acceptance Criteria into private scratchpad.</description>
+      </step>
+      <step number="2">
+        <description>Retrieve existing repo labels (reused from session cache or queried once) and semantically match feature request to existing label <code>enhancement</code>.</description>
+      </step>
+      <step number="3">
+        <description>Search existing issues for duplicates; none found.</description>
+      </step>
+      <step number="4">
+        <description><strong>Hard Stop Gate #1:</strong> Present drafted feature issue Markdown (Summary, Motivation, Proposed Implementation) with proposed label <code>enhancement</code> and halt execution for user confirmation.</description>
+      </step>
+      <step number="5">
+        <description>Upon user approval, call <code>create_issue</code>, receiving issue #140.</description>
+      </step>
+      <step number="6">
+        <description>Prompt user at Gate #2 using feature-appropriate phrasing: "Yes, implement feature on new feature branch". Upon approval, create branch <code>issue-140-dark-mode-toggle</code> and delegate implementation to Code mode.</description>
+      </step>
+      <step number="7">
+        <description>Upon return, present diff and test results at Hard Stop Gate #3 using implementation-focused summary.</description>
+      </step>
+      <step number="8">
+        <description>Upon approval, commit changes with <code>Implement dark mode toggle in navigation bar (Resolves #140)</code>, push branch, open PR with closing keyword <code>Resolves #140</code>, and complete Phase 6 workspace restoration.</description>
+      </step>
+    </workflow>
+
+    <completion>
+      Successfully created feature issue #140 with label <code>enhancement</code>, coordinated implementation via Code mode on branch <code>issue-140-dark-mode-toggle</code>, verified diff, opened PR, and completed post-merge workspace restoration.
+    </completion>
+  </example>
+
+  <example name="manual_issue_closure_duplicate">
+    <scenario>
+      During triage, user requests closing issue #45 because it duplicates existing issue #12.
+    </scenario>
+
+    <workflow>
+      <step number="1">
+        <description>Identify closure reason as "duplicate" (platform status `closed` with `state_reason: "not_planned"`). Semantically match repository labels for duplicate tag (found <code>duplicate</code>).</description>
+      </step>
+      <step number="2">
+        <description>Draft proposed closure details: Reason: "duplicate / not planned", Label: "duplicate", Closing comment: "Closing as duplicate of #12."</description>
+      </step>
+      <step number="3">
+        <description><strong>Manual Closure Gate:</strong> Present proposed closure and comment to user via <code>ask_followup_question</code> and halt execution. Do NOT call update_issue in the same turn.</description>
+      </step>
+      <step number="4">
+        <description>Upon explicit user approval in the subsequent turn, post closing comment via <code>add_issue_comment</code> and update issue #45 to closed with reason not_planned and label <code>duplicate</code>.</description>
+      </step>
+    </workflow>
+
+    <completion>
+      Presented closure proposal, received user authorization at manual closure gate, posted explanatory duplicate comment, and updated issue #45 to closed (not planned) with duplicate label.
+    </completion>
+  </example>
+
+  <example name="blanket_destructive_action_confirmation">
+    <scenario>
+      User provides a broad prompt: "Clean up all old stale feature branches."
+    </scenario>
+
+    <workflow>
+      <step number="1">
+        <description>Identify candidate branches to delete by querying local and remote branches (e.g., `issue-10-old-feature` merged long ago).</description>
+      </step>
+      <step number="2">
+        <description>Do NOT execute deletions immediately. Present specific deletion targets to the user: "Proposed deletions: local and remote branch `issue-10-old-feature`" via <code>ask_followup_question</code> with choices: <code>["Approve branch deletions", "Cancel"]</code>.</description>
+      </step>
+      <step number="3">
+        <description>Halt and wait for explicit confirmation in the subsequent turn before executing any `git branch -d` or `git push origin --delete` commands.</description>
+      </step>
+    </workflow>
+
+    <completion>
+      Identified stale branches, presented specific proposed deletions to the user, and obtained explicit confirmation before executing destructive branch deletions.
     </completion>
   </example>
 </complete_examples>

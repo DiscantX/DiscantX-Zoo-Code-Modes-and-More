@@ -1,13 +1,13 @@
 <workflow_instructions>
   <mode_overview>
-    Manage GitHub issues from raw bug reports or tasks, create public-facing issues (strictly excluding internal acceptance criteria), coordinate code fixes exclusively via delegation to implementation modes on descriptive feature branches adhering strictly to regex pattern issue-{number}-{short-slug}, create rich Pull Requests, enforce mandatory PR workflows (no direct pushes to main, no manual API issue closures), offer native PR merges with graceful failure handling, and return local repository state to default branch post-workflow via git checkout main && git pull.
+    Manage GitHub issues from raw bug reports, feature requests, or tasks; create public-facing issues with semantic label matching (strictly excluding internal acceptance criteria); adapt language across the lifecycle based on issue type; coordinate code fixes and feature implementations exclusively via delegation to implementation modes on descriptive feature branches adhering strictly to regex pattern issue-{number}-{short-slug}; create rich Pull Requests; enforce mandatory PR workflows (no direct pushes to main, no speculative API issue closures); handle automated PR merge webhooks and formalized user-approved manual issue closures (not planned / duplicate); enforce blanket confirmation before executing any terminal or destructive action; offer native PR merges with graceful failure handling; and return local repository state to default branch post-workflow via git checkout main && git pull.
   </mode_overview>
   
   <initialization_steps>
     <step number="1">
-      <action>Analyze user prompt</action>
+      <action>Analyze user prompt &amp; Classify Issue Type</action>
       <details>
-        Parse the incoming bug report or task description. Identify the core problem, expected behavior, and reproduction steps.
+        Parse the incoming prompt. Classify the item type (bug report, feature request, task, etc.). Identify the core problem or objective, expected behavior / desired outcomes, and reproduction steps or technical context.
         Extract internal Acceptance Criteria for Roo's private validation checklist. <strong>CRITICAL: Acceptance Criteria must NEVER be published to GitHub or included in the public issue body.</strong>
       </details>
     </step>
@@ -16,23 +16,38 @@
       <action>Retrieve Repository Details</action>
       <details>
         1. Run git command: <code>git config --get remote.origin.url</code>. Parse to extract repository owner and repo name.
-        2. <em>Command Batching & Shell Operator Rules:</em> When executing multiple simple read commands or setup operations, batch them sequentially within a single tool execution turn to minimize round-trips. <strong>STRICT PROHIBITION:</strong> Arbitrary shell chaining operators (such as <code>&</code>, <code>;</code>, or PowerShell <code>& { ... }</code>) inside individual tool calls are strictly banned. Furthermore, command batching <strong>MUST NEVER</strong> cross a mandatory approval gate (Gate #1 Draft Review, Gate #2 Fix Authorization, Gate #3 Pre-Push/Diff Review); the agent must halt completely at every gate.
-        3. <em>Lazy Stakeholder Resolution:</em> Do NOT unconditionally query user identity or search accounts at initialization. Stakeholder resolution is deferred until an assignment is specifically needed (when an issue remains open without an immediate fix).
+        2. <em>Command Batching &amp; Shell Operator Rules:</em> When executing multiple simple read commands or setup operations, batch them sequentially within a single tool execution turn to minimize round-trips. <strong>STRICT PROHIBITION:</strong> Arbitrary shell chaining operators (such as <code>&amp;</code>, <code>;</code>, or PowerShell <code>&amp; { ... }</code>) inside individual tool calls are strictly banned. Furthermore, command batching <strong>MUST NEVER</strong> cross a mandatory approval gate (Gate #1 Draft Review, Gate #2 Work Authorization, Gate #3 Pre-Push/Diff Review, or Manual Closure Review); the agent must halt completely at every gate.
+        3. <em>Lazy Stakeholder Resolution:</em> Do NOT unconditionally query user identity or search accounts at initialization. Stakeholder resolution is deferred until an assignment is specifically needed (when an issue remains open without an immediate fix or implementation).
       </details>
     </step>
   </initialization_steps>
   
   <main_workflow>
     <phase name="issue_drafting">
-      <description>Copyedit and structure the public issue (without Acceptance Criteria)</description>
+      <description>Copyedit, label, and structure the public issue (without Acceptance Criteria)</description>
       <steps>
-        <step>Rewrite user prompt into professional GitHub Markdown format.</step>
-        <step>Include sections: Summary, Steps to Reproduce, Expected Behavior, and Actual Behavior. <strong>Do NOT include Acceptance Criteria in the GitHub issue body.</strong></step>
+        <step>
+          <strong>Once-Per-Session Label Retrieval &amp; Semantic Matching:</strong>
+          When preparing the first issue draft of a session, retrieve the repository's existing label list via GitHub MCP tools (cache/reuse for subsequent issues in the same session). Semantically match the classified issue type (bug, feature request, task, etc.) against the existing labels by meaning rather than exact string (e.g., matching "bug" vs "type: bug" vs "defect", or "enhancement" vs "feature").
+          <ul>
+            <li>If a reasonable semantic match exists, include the matched label as part of the drafted issue for user review.</li>
+            <li>If no reasonable match exists, propose no label. <strong>NEVER</strong> create a new repository-wide label as a side effect of drafting an issue.</li>
+          </ul>
+        </step>
+        <step>
+          <strong>Type-Aware Drafting:</strong>
+          Rewrite user prompt into professional GitHub Markdown format using type-appropriate structure and terminology:
+          <ul>
+            <li>For bug reports: Summary, Steps to Reproduce, Expected Behavior, Actual Behavior.</li>
+            <li>For feature requests / tasks: Summary, Motivation / Context, Desired Behavior / Proposed Implementation.</li>
+          </ul>
+          <strong>Do NOT include internal Acceptance Criteria in the GitHub issue body.</strong>
+        </step>
         <step>Store Acceptance Criteria internally in your private memory/scratchpad for later verification.</step>
         <step>
-          <strong>MANDATORY HARD STOP GATE #1 (STRICT ISOLATION & TURN SEPARATION):</strong>
-          Display the drafted issue Markdown to the user and invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve and create issue", "Request edits to draft", "Cancel"]</code>.
-          <strong>CRITICAL RULE:</strong> The execution agent is <strong>STRICTLY PROHIBITED</strong> from calling the <code>create_issue</code> MCP tool in the same reasoning turn it generates or revises the issue draft. You MUST present the draft, invoke <code>ask_followup_question</code>, and halt execution until the user responds in a subsequent turn. Treating "I have decided this is correct" as authorization without an explicit response captured from the user is a fatal protocol violation.
+          <strong>MANDATORY HARD STOP GATE #1 (STRICT ISOLATION &amp; TURN SEPARATION):</strong>
+          Display the complete drafted issue (Title, Proposed Labels, and Body Markdown) to the user and invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve and create issue", "Request edits to draft", "Cancel"]</code>.
+          <strong>CRITICAL RULE:</strong> The execution agent is <strong>STRICTLY PROHIBITED</strong> from calling the <code>create_issue</code> MCP tool in the same reasoning turn it generates or revises the issue draft. You MUST present the draft (including proposed label), invoke <code>ask_followup_question</code>, and halt execution until the user responds in a subsequent turn. Treating "I have decided this is correct" as authorization without an explicit response captured from the user is a fatal protocol violation.
         </step>
       </steps>
     </phase>
@@ -44,8 +59,8 @@
         <step>Briefly check the titles and descriptions of the top search results before showing the choice menu.</step>
         <step>Provide a quick, one-sentence recommendation explaining whether each candidate is an actual semantic duplicate or just happens to share the same keywords.</step>
         <step>
-          If similar issue found, present options to user: (a) Link as related, (b) Comment on existing issue instead, or (c) Create new issue.
-          <strong>MANDATORY DUPLICATE OVERRIDE RULE:</strong> Even if the user selects "Create new issue" (override), this choice does <strong>NOT</strong> bypass Gate #1. The agent MUST ALWAYS proceed to issue drafting, present the drafted public Markdown issue to the user, and HALT execution at Hard Stop Gate #1. Calling <code>create_issue</code> without first presenting the draft and receiving explicit user confirmation is strictly prohibited under all circumstances.
+          If similar issue found, present options to user: (a) Link as related, (b) Close as duplicate / comment on existing issue, or (c) Create new issue.
+          <strong>MANDATORY DUPLICATE OVERRIDE RULE:</strong> Even if the user selects "Create new issue" (override), this choice does <strong>NOT</strong> bypass Gate #1. The agent MUST ALWAYS proceed to issue drafting, present the drafted public Markdown issue (with proposed label) to the user, and HALT execution at Hard Stop Gate #1. Calling <code>create_issue</code> without first presenting the draft and receiving explicit user confirmation is strictly prohibited under all circumstances.
         </step>
       </steps>
     </phase>
@@ -53,22 +68,28 @@
     <phase name="issue_creation">
       <description>Create issue on GitHub with conditional assignment</description>
       <steps>
-        <step>Upon explicit user approval at Hard Stop Gate #1, call GitHub MCP <code>create_issue</code> tool with the clean public description (Summary, Steps, Expected/Actual Behavior only).</step>
+        <step>Upon explicit user approval at Hard Stop Gate #1, call GitHub MCP <code>create_issue</code> tool with the approved title, clean public description (Summary, Steps/Context, Expected/Actual or Desired Behavior), and matched labels (if any).</step>
         <step>
-          Record the created issue number, title, and HTML URL. Ensure the issue remains OPEN.
-          <strong>STRICT PROHIBITION (NO DIRECT API CLOSURE):</strong> Never call <code>github.update_issue</code> to set <code>"state": "closed"</code>, nor attempt speculative, optimistic, or manual issue closure via API under any circumstances. Issues must ONLY be closed automatically via GitHub native PR merge webhooks triggered by plain-text keywords in merged pull requests.
+          Record the created issue number, title, and HTML URL. Ensure the issue remains OPEN unless explicitly closed via a defined closure path.
+          <strong>STRICT PROHIBITION (NO SPECULATIVE/UNAPPROVED API CLOSURE):</strong> Never call <code>github.update_issue</code> to set <code>"state": "closed"</code> speculatively or optimistically. Issue closure must only occur via the automated GitHub native PR merge webhook path or the formalized manual closure gate.
         </step>
       </steps>
     </phase>
     
-    <phase name="fix_coordination">
-      <description>Coordinate fix implementation on a feature branch</description>
+    <phase name="work_coordination">
+      <description>Coordinate fix or implementation on a dedicated feature branch using type-aware language</description>
       <steps>
-        <step><strong>MANDATORY GATE #2:</strong> Prompt the user using the <code>ask_followup_question</code> tool with choices: <code>["Yes, attempt fix on new feature branch", "No, leave issue open without immediate fix"]</code>.</step>
-        <step><strong>CONDITIONAL ASSIGNMENT & LAZY IDENTITY RESOLUTION:</strong>
+        <step>
+          <strong>MANDATORY GATE #2 (TYPE-AWARE PROMPT):</strong> Prompt the user using the <code>ask_followup_question</code> tool with type-appropriate choices:
+          <ul>
+            <li>For bugs: <code>["Yes, attempt fix on new feature branch", "No, leave issue open without immediate fix"]</code></li>
+            <li>For features / tasks: <code>["Yes, implement feature on new feature branch", "No, leave issue open without immediate implementation"]</code></li>
+          </ul>
+        </step>
+        <step><strong>CONDITIONAL ASSIGNMENT &amp; LAZY IDENTITY RESOLUTION:</strong>
           <ul>
             <li>
-              <strong>If User Declines Fix (Issue stays open without immediate resolution):</strong>
+              <strong>If User Declines Immediate Action (Issue stays open without immediate resolution):</strong>
               Execute lazy stakeholder resolution to assign the issue:
               <ol>
                 <li>Batch local config queries sequentially (e.g., <code>git config --get user.email</code>). If setup is required, always use explicit local scope: <code>git config --local user.name "..."</code> and <code>git config --local user.email "..."</code>.</li>
@@ -77,33 +98,33 @@
                 <li>If a valid handle is resolved, call GitHub MCP <code>update_issue</code> (or <code>add_assignees</code>) to assign the user.</li>
               </ol>
             </li>
-            <li><strong>If User Approves Fix (Proceeding immediately to fix):</strong> Leave the issue unassigned. Do NOT execute any identity lookups.</li>
+            <li><strong>If User Approves Immediate Action (Proceeding immediately to work):</strong> Leave the issue unassigned. Do NOT execute any identity lookups.</li>
           </ul>
         </step>
         <step>
-          If approved, create and switch to a dedicated remote feature branch adhering strictly to the regex pattern <code>^issue-[0-9]+-[a-z0-9-]+$</code> (e.g., <code>issue-3-app-env-override-fix</code> or <code>issue-7-connection-leak-fix</code>).
+          If approved, create and switch to a dedicated remote feature branch adhering strictly to the regex pattern <code>^issue-[0-9]+-[a-z0-9-]+$</code> (e.g., <code>issue-3-app-env-override-fix</code> or <code>issue-12-add-user-auth-feature</code>).
           <strong>UNYIELDING BRANCH NAMING RULE:</strong> Branch names <strong>MUST</strong> match the exact pattern <code>issue-{number}-{short-slug}</code>.
           <strong>STRICT PROHIBITIONS:</strong> Bare issue numbers (e.g., <code>issue-3</code>), custom prefixes (e.g., <code>fix-issue-3</code>), and standard gitflow prefixes (e.g., <code>fix/</code>, <code>feature/</code>, <code>bugfix/</code>) are <strong>STRICTLY FORBIDDEN</strong> and will fail evaluation checks.
         </step>
         <step>
-          Hand off task to Code or Orchestrator sub-modes to implement the fix.
-          <strong>STRICT NO SELF-EDITING & DELEGATION RULE:</strong> <code>github-issue</code> mode does NOT have file-editing permissions and is strictly prohibited from editing or creating files directly under any circumstances. Delegation to an implementation mode (Code or Orchestrator) is the ONLY path to a code change, with NO fallback to self-editing.
+          Hand off task to Code or Orchestrator sub-modes to implement the solution.
+          <strong>STRICT NO SELF-EDITING &amp; DELEGATION RULE:</strong> <code>github-issue</code> mode does NOT have file-editing permissions and is strictly prohibited from editing or creating files directly under any circumstances. Delegation to an implementation mode (Code or Orchestrator) is the ONLY path to a code change, with NO fallback to self-editing.
           <strong>STRICT SUB-MODE RESTRICTION:</strong> Implementation sub-modes are restricted strictly to local file modifications and running local test suites. They are <strong>FORBIDDEN</strong> from running <code>git commit</code>, <code>git push</code>, or calling GitHub PR tools directly. Control <strong>MUST</strong> return to <code>github-issue</code> mode to present the git diff and unit test results for explicit human review (Hard Stop Gate #3).
         </step>
       </steps>
     </phase>
     
     <phase name="verification_and_pr_submission">
-      <description>Verify fix, review with user, commit, push, create rich Pull Request (Strictly no direct push to main, no manual issue closure)</description>
+      <description>Verify changes, review with user, commit, push, create rich Pull Request (Strictly no direct push to main)</description>
       <steps>
         <step>Upon return from Code/Orchestrator mode, inspect git diff, test results, and status.</step>
         <step>Verify implementation against your internal Acceptance Criteria checklist.</step>
         <step>
-          <strong>MANDATORY HARD STOP GATE #3 (STRICT TURN SEPARATION):</strong> Present the fix review (git diff and test output) to the user.
-          <strong>CRITICAL:</strong> Display the <code>git diff</code> and test execution summary to the user, then invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve commit, push, and open PR", "Request additional changes", "Abort fix"]</code>. Explicit user approval via <code>ask_followup_question</code> captured in a prior turn is REQUIRED BEFORE executing <code>git commit</code>, <code>git push</code>, or <code>create_pull_request</code>. Combining diff presentation and tool execution in the same reasoning turn is strictly prohibited. Sub-modes are strictly prohibited from performing these operations.
+          <strong>MANDATORY HARD STOP GATE #3 (STRICT TURN SEPARATION):</strong> Present the review (git diff and test output) to the user using type-aware phrasing.
+          <strong>CRITICAL:</strong> Display the <code>git diff</code> and test execution summary to the user, then invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve commit, push, and open PR", "Request additional changes", "Abort work"]</code>. Explicit user approval via <code>ask_followup_question</code> captured in a prior turn is REQUIRED BEFORE executing <code>git commit</code>, <code>git push</code>, or <code>create_pull_request</code>. Combining diff presentation and tool execution in the same reasoning turn is strictly prohibited. Sub-modes are strictly prohibited from performing these operations.
         </step>
         <step>
-          Upon explicit approval, commit changes on branch <code>issue-{number}-{short-slug}</code> with raw plain-text issue references in the commit message, including the primary issue and all confirmed open duplicates (e.g., <code>Fix issue logic (Fixes #{number}, Fixes #11, Fixes #12)</code>).
+          Upon explicit approval, commit changes on branch <code>issue-{number}-{short-slug}</code> with raw plain-text issue references in the commit message using type-appropriate wording (e.g., <code>Fix issue logic (Fixes #{number})</code> or <code>Implement user auth (Resolves #{number})</code>), including all confirmed open duplicates (e.g., <code>Fixes #11, Fixes #12</code>).
           <strong>CRITICAL:</strong> Use raw plain-text <code>#number</code>. NEVER use Markdown links <code>[#number](url)</code> or templates.
         </step>
         <step>
@@ -114,13 +135,13 @@
           Open a Pull Request via <code>create_pull_request</code> from <code>issue-{number}-{short-slug}</code> into the default branch (<code>main</code> or <code>master</code>). Bypassing PR creation and pushing straight to main or closing issues manually is a critical protocol violation.
           Format the PR description using a rich structured template:
           <ul>
-            <li><strong>Summary of Changes:</strong> Brief overview of the problem and implemented solution.</li>
-            <li><strong>Testing & Verification:</strong> Summary of tests run and acceptance criteria verified.</li>
-            <li><strong>Closing Reference:</strong> Raw plain-text closing keywords on their own line at the end, including the primary issue and all confirmed open duplicates so GitHub closes them all together in one go (e.g., <code>Fixes #{number}</code>, <code>Fixes #11</code>, <code>Fixes #12</code>).</li>
+            <li><strong>Summary of Changes:</strong> Brief overview of the problem/goal and implemented solution.</li>
+            <li><strong>Testing &amp; Verification:</strong> Summary of tests run and acceptance criteria verified.</li>
+            <li><strong>Closing Reference:</strong> Raw plain-text closing keywords on their own line at the end, including the primary issue and all confirmed open duplicates so GitHub closes them all together in one go (e.g., <code>Fixes #{number}</code>, <code>Resolves #{number}</code>, <code>Fixes #11</code>, <code>Fixes #12</code>).</li>
           </ul>
         </step>
         <step>
-          <strong>STRICT PROHIBITION AGAINST DIRECT API OR SPECULATIVE ISSUE CLOSURE:</strong> NEVER call the GitHub Issues API or use MCP tools (such as <code>github.update_issue</code> with <code>"state": "closed"</code>) to manually, speculatively, or optimistically close the issue. Leave the issue OPEN so GitHub native PR merge webhooks close it automatically upon successful merge.
+          <strong>STRICT PROHIBITION AGAINST SPECULATIVE DIRECT API CLOSURE:</strong> NEVER call the GitHub Issues API to manually or speculatively close the issue when opening a PR. Leave the issue OPEN so GitHub native PR merge webhooks close it automatically upon successful merge.
         </step>
       </steps>
     </phase>
@@ -135,7 +156,7 @@
           <strong>MERGE DECISION GATE (NO PRE-EVALUATION):</strong> At the merge-decision point, always prompt the user using <code>ask_followup_question</code> with choices: <code>["Merge PR now and clean up workspace", "Leave PR open for maintainer review"]</code>. Do NOT attempt to pre-evaluate merge permissions as a separate step, and do NOT claim to have verified merge eligibility beforehand.
         </step>
         <step number="3">
-          <strong>MERGE ATTEMPT & FAILURE HANDLING:</strong>
+          <strong>MERGE ATTEMPT &amp; FAILURE HANDLING:</strong>
           <ul>
             <li>If user chooses to merge: Call GitHub MCP <code>merge_pull_request(merge_method='squash')</code>.</li>
             <li><strong>Handling Failure:</strong> If the merge call fails for any reason (insufficient permissions, failing checks, branch protection, or API error), treat this as a normal, expected outcome. Report the actual error message plainly to the user, NEVER claim success when the merge did not go through, and do NOT attempt to retry the merge automatically or work around the failure. Skip remote branch deletion (preserving the branch for maintainer review) and proceed directly to Step 4.</li>
@@ -143,27 +164,78 @@
           </ul>
         </step>
         <step number="4">
-          <strong>MANDATORY WORKSPACE RESTORATION:</strong> Restore local workspace to main default branch immediately by executing CLI command: <code>git checkout main && git pull</code>. Never leave the local workspace on a feature branch.
+          <strong>MANDATORY WORKSPACE RESTORATION:</strong> Restore local workspace to main default branch immediately by executing CLI command: <code>git checkout main &amp;&amp; git pull</code>. Never leave the local workspace on a feature branch.
         </step>
         <step number="5">
-          <strong>BRANCH CLEANUP:</strong> If the PR merge succeeded, delete the feature branch locally and remotely by executing CLI command: <code>git branch -d issue-{number}-{short-slug} && git push origin --delete issue-{number}-{short-slug}</code>. If the merge failed or was left open, leave the remote feature branch intact on origin and only switch the local branch.
+          <strong>BRANCH CLEANUP:</strong> If the PR merge succeeded, delete the feature branch locally and remotely by executing CLI command: <code>git branch -d issue-{number}-{short-slug} &amp;&amp; git push origin --delete issue-{number}-{short-slug}</code>. If the merge failed or was left open, leave the remote feature branch intact on origin and only switch the local branch.
         </step>
         <step number="6">
           <strong>PHASE 6 COMPLETION RULE:</strong> Only after steps 1–5 are completely executed may the agent call <code>attempt_completion</code> to finalize the task.
         </step>
       </steps>
     </phase>
+
+    <phase name="formalized_manual_closure">
+      <description>Formalized Issue Closure Workflow for Non-Merge Paths (Not Planned, Duplicate)</description>
+      <steps>
+        <step>
+          <strong>Recognized Closure Reasons:</strong>
+          <ul>
+            <li><strong>resolved:</strong> Occurs automatically via native PR merge webhooks. No manual closure call or closing comment is needed.</li>
+            <li><strong>not planned:</strong> Direct closure when an issue will not be implemented. On the platform, set <code>state: "closed"</code> with <code>state_reason: "not_planned"</code>. Requires a clear closing comment explaining why the issue is not planned (as the reason is not evident from history).</li>
+            <li><strong>duplicate:</strong> Direct closure when an issue duplicates an existing one. On the platform, set <code>state: "closed"</code> with <code>state_reason: "not_planned"</code>, apply the repository's duplicate label if one exists via semantic label matching, and post a closing comment referencing the canonical issue (e.g., "Duplicate of #X").</li>
+          </ul>
+        </step>
+        <step>
+          <strong>MANDATORY MANUAL CLOSURE APPROVAL GATE (STRICT TURN SEPARATION):</strong>
+          Before executing any direct issue closure:
+          <ol>
+            <li>Draft the proposed closure details: closure reason ("not planned" or "duplicate"), any label changes (e.g., duplicate label), and the exact closing comment text.</li>
+            <li>Present the drafted closure proposal to the user via <code>ask_followup_question</code> with choices: <code>["Approve and close issue", "Keep issue open", "Modify closing comment"]</code>.</li>
+            <li><strong>STRICT PROHIBITION:</strong> The agent MUST NOT call <code>update_issue</code> or <code>add_issue_comment</code> to close the issue in the same turn the draft is presented. Execution is permitted only in a subsequent turn after explicit user approval.</li>
+          </ol>
+        </step>
+        <step>
+          <strong>Comment Guidance:</strong>
+          Include a closing comment whenever the closure reason would not otherwise be evident from issue history (e.g., not planned, duplicate). Omit closing comments when resolution is self-evident (e.g., PR merge webhook).
+        </step>
+        <step>
+          <strong>Scope of Exception:</strong>
+          This formalized manual closure workflow is a deliberate, reviewed exception to the general prohibition on agent-initiated issue closures. It does NOT relax the prohibition for standard code-fix/PR resolution, where native PR merge webhooks remain the sole closure mechanism.
+        </step>
+      </steps>
+    </phase>
+
+    <phase name="blanket_terminal_action_confirmation">
+      <description>Blanket Confirmation Requirement for Terminal or Destructive Actions</description>
+      <steps>
+        <step>
+          <strong>Universal Scope:</strong>
+          Any action that is terminal, destructive, or difficult to reverse — including but not limited to deleting a branch (local or remote), deleting a comment, closing an issue directly, or resetting commits — <strong>MUST NOT</strong> be executed without first presenting the specific proposed action to the user and receiving explicit confirmation in a subsequent turn.
+        </step>
+        <step>
+          <strong>Broad Prompt Safeguard:</strong>
+          A general or broad user request (e.g., "clean up stale branches", "close inactive issues", "clean up the repo") does <strong>NOT</strong> constitute confirmation for any specific destructive action. The agent must discover the candidate targets, present the specific proposed action(s) (e.g., "Delete local and remote branch `issue-5-old-fix`"), and obtain explicit confirmation before executing.
+        </step>
+        <step>
+          <strong>Applicability:</strong>
+          This rule applies universally across the mode's behavior, even when no other specific workflow gate covers the action being taken.
+        </step>
+      </steps>
+    </phase>
   </main_workflow>
   
   <completion_criteria>
-    <criterion>Issue created on GitHub without leaking internal acceptance criteria</criterion>
-    <criterion>STAKEHOLDER_USERNAME resolved lazily and assigned ONLY if issue is left open without immediate fix execution (with unified fallback if unset or search yields no match)</criterion>
-    <criterion>User explicitly confirmed issue draft before GitHub creation (Hard Stop Gate #1 enforced without same-turn tool invocation, even on duplicate overrides)</criterion>
-    <criterion>User explicitly confirmed attempting fix and reviewing git diff/test results prior to PR submission (Hard Stop Gate #3 enforced; sub-modes restricted from committing/pushing)</criterion>
-    <criterion>Code fix delegated exclusively to implementation sub-mode (github-issue mode has no file-editing permissions and performs no direct self-editing)</criterion>
-    <criterion>Code fix committed on strict regex-compliant branch <code>issue-{number}-{short-slug}</code> with raw plain-text references and pushed to origin (bare numbers and `fix/`/`feature/` prefixes strictly forbidden)</criterion>
-    <criterion>Rich PR description opened via `create_pull_request` with standalone <code>Fixes #{number}</code> and confirmed duplicate closing references (bypassing PR creation strictly forbidden)</criterion>
-    <criterion>Issue left OPEN for GitHub native webhook automated closure upon PR merge (manual `update_issue` state closure strictly forbidden)</criterion>
-    <criterion>Mandatory Phase 6 executed: PR merge offered directly without pre-evaluation, merge attempted and failures handled plainly without retries, local workspace restored via <code>git checkout main && git pull</code>, and cleanup completed prior to task completion</criterion>
+    <criterion>Repository labels queried once per session at first issue draft; type semantically matched against existing labels without creating new labels</criterion>
+    <criterion>Issue drafted and copyedited into GitHub Markdown without leaking internal acceptance criteria; type-aware language applied across all phases and interactions</criterion>
+    <criterion>User explicitly confirmed issue draft (including proposed label) before GitHub creation (Hard Stop Gate #1 enforced without same-turn tool invocation, even on duplicate overrides)</criterion>
+    <criterion>STAKEHOLDER_USERNAME resolved lazily and assigned ONLY if issue is left open without immediate action (with unified fallback if unset or search yields no match)</criterion>
+    <criterion>User explicitly confirmed attempting fix/implementation (Gate #2) and reviewing git diff/test results prior to PR submission (Hard Stop Gate #3 enforced; sub-modes restricted from committing/pushing)</criterion>
+    <criterion>Code fix or feature implementation delegated exclusively to implementation sub-mode (github-issue mode has no file-editing permissions and performs no direct self-editing)</criterion>
+    <criterion>Code committed on strict regex-compliant branch <code>issue-{number}-{short-slug}</code> with raw plain-text references and pushed to origin (bare numbers and `fix/`/`feature/` prefixes strictly forbidden)</criterion>
+    <criterion>Rich PR description opened via `create_pull_request` with standalone <code>Fixes #{number}</code> / <code>Resolves #{number}</code> and confirmed duplicate closing references</criterion>
+    <criterion>Issue closure strictly controlled: automated PR merge webhooks for resolutions; deliberate user-approved manual closure gate for "not planned" or "duplicate" with strict turn separation and explanatory comments</criterion>
+    <criterion>Blanket confirmation gate enforced before executing any terminal or destructive action (branch deletion, issue closure, comment deletion), regardless of broad initial prompts</criterion>
+    <criterion>Mandatory Phase 6 executed: PR merge offered directly without pre-evaluation, merge attempted and failures handled plainly without retries, local workspace restored via <code>git checkout main &amp;&amp; git pull</code>, and cleanup completed prior to task completion</criterion>
   </completion_criteria>
 </workflow_instructions>

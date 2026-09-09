@@ -9,28 +9,32 @@
       <solution>Verify GitHub authentication settings or personal access token permissions.</solution>
     </scenario>
     <scenario>
-      <situation>Duplicate issue found</situation>
-      <solution>Present the existing issue URL to the user and ask whether to link, comment, or override.</solution>
+      <situation>No matching repository label exists for issue type</situation>
+      <solution>Propose no label in the draft. Do NOT attempt to create new repository-wide labels via API.</solution>
+    </scenario>
+    <scenario>
+      <situation>Duplicate issue found during search</situation>
+      <solution>Present the existing issue URL to the user and ask whether to link, close as duplicate / comment, or override.</solution>
     </scenario>
     <scenario>
       <situation>Attempted duplicate override without Gate #1 review</situation>
-      <solution>Block execution immediately. Even when user selects "Create new issue anyway", mandate presentation of drafted public issue Markdown and halt at Hard Stop Gate #1 before calling create_issue.</solution>
+      <solution>Block execution immediately. Even when user selects "Create new issue anyway", mandate presentation of drafted public issue Markdown (including proposed label) and halt at Hard Stop Gate #1 before calling create_issue.</solution>
     </scenario>
     <scenario>
       <situation>Attempted global/unscoped git config setup without --local flag</situation>
       <solution>Reject unscoped config commands. Enforce explicit scope flag: `git config --local user.name "..."` and `git config --local user.email "..."`.</solution>
     </scenario>
     <scenario>
-      <situation>Attempted use of arbitrary shell operators (&, ;, PowerShell & { ... }) or command batching across approval gates</situation>
-      <solution>Reject shell chaining operators. Ensure sequential command batching is non-interactive, avoids banned operators, and NEVER crosses mandatory approval gates (Gate #1, Gate #2, Gate #3).</solution>
+      <situation>Attempted use of arbitrary shell operators (&amp;, ;, PowerShell &amp; { ... }) or command batching across approval gates</situation>
+      <solution>Reject shell chaining operators. Ensure sequential command batching is non-interactive, avoids banned operators, and NEVER crosses mandatory approval gates (Gate #1, Gate #2, Gate #3, or Manual Closure Gate).</solution>
     </scenario>
     <scenario>
       <situation>Accidental acceptance criteria leakage attempted</situation>
       <solution>Intercept draft creation, strip acceptance criteria from public markdown payload, and retain them solely in private scratchpad.</solution>
     </scenario>
     <scenario>
-      <situation>Fix verification fails</situation>
-      <solution>Report test failures or unmet acceptance criteria back to the user before attempting closure.</solution>
+      <situation>Fix/Implementation verification fails</situation>
+      <solution>Report test failures or unmet acceptance criteria back to the user before attempting closure or PR submission.</solution>
     </scenario>
     <scenario>
       <situation>Attempted direct file editing within github-issue mode</situation>
@@ -42,11 +46,19 @@
     </scenario>
     <scenario>
       <situation>PR merge attempt fails (permissions, branch protection, or API error)</situation>
-      <solution>Report the error plainly to the user, never claim false success, do not retry automatically, skip remote branch deletion, and proceed directly to workspace restoration (`git checkout main && git pull`).</solution>
+      <solution>Report the error plainly to the user, never claim false success, do not retry automatically, skip remote branch deletion, and proceed directly to workspace restoration (`git checkout main &amp;&amp; git pull`).</solution>
     </scenario>
     <scenario>
-      <situation>Attempted direct API or speculative/optimistic issue closure (`github.update_issue` with state closed or manual closure calls)</situation>
-      <solution>Block execution immediately. Reiterate that issue closure is strictly forbidden as an agent-initiated action and occurs exclusively and automatically via GitHub native PR merge webhooks using plain-text keywords in the PR description.</solution>
+      <situation>Attempted speculative or unapproved issue closure (`github.update_issue` with state closed without passing manual closure gate or merge webhook)</situation>
+      <solution>Block execution immediately. Reiterate that issue closure occurs automatically via GitHub native PR merge webhooks or via the formalized manual closure gate (for "not planned" or "duplicate" with draft review and closing comments).</solution>
+    </scenario>
+    <scenario>
+      <situation>Attempted manual issue closure without explicit user approval gate or missing required comment</situation>
+      <solution>Halt execution immediately. Draft the proposed closure reason, label, and explanatory closing comment, then invoke `ask_followup_question` and wait for explicit confirmation in a subsequent turn before calling update_issue.</solution>
+    </scenario>
+    <scenario>
+      <situation>Attempted destructive action (e.g., deleting branch or comment) based on a broad or generic user request</situation>
+      <solution>Block immediate execution. Identify the specific candidate targets, present the exact action proposal to the user, and require explicit confirmation in a subsequent turn before executing.</solution>
     </scenario>
     <scenario>
       <situation>Attempted bypass of Gate #1 draft review, Gate #2 fix review, or Gate #3 pre-push review via same-turn tool invocation</situation>
@@ -58,7 +70,7 @@
     </scenario>
     <scenario>
       <situation>Attempted premature task completion before Phase 6 workspace cleanup</situation>
-      <solution>Block completion, offer/attempt PR merge, restore workspace via `git checkout main && git pull`, and clean up branch.</solution>
+      <solution>Block completion, offer/attempt PR merge, restore workspace via `git checkout main &amp;&amp; git pull`, and clean up branch.</solution>
     </scenario>
   </error_scenarios>
 </error_handling>

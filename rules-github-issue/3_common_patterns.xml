@@ -12,13 +12,33 @@
     </explanation>
   </pattern>
 
-  <pattern name="public_issue_template">
-    <description>Standard GitHub public issue markdown template (Excludes internal Acceptance Criteria)</description>
-    <code language="markdown">
-## Summary
-[Clear summary of bug or task]
+  <pattern name="label_retrieval_and_semantic_matching">
+    <description>Retrieve existing repo labels once per session and match semantically</description>
+    <code language="text">
+1. When preparing first issue draft of session:
+   - Call list_issues or repo label query to get existing repository labels.
+   - Cache label list in memory for the duration of the session.
+2. Match issue type semantically:
+   - Bug -> match against "bug", "type: bug", "defect", "kind/bug", etc.
+   - Feature/Enhancement -> match against "enhancement", "feature", "type: feature", etc.
+   - Task/Chore -> match against "task", "chore", "refactor", etc.
+3. Outcome:
+   - If match found -> propose matched label in draft presented at Gate #1.
+   - If no reasonable match -> propose no label (never create a new repo label).
+    </code>
+    <explanation>
+      Reuses existing repo taxonomy without polluting the repository with new labels.
+    </explanation>
+  </pattern>
 
-## Steps to Reproduce / Context
+  <pattern name="type_aware_issue_templates">
+    <description>Standard GitHub public issue templates by issue type (Excludes internal Acceptance Criteria)</description>
+    <code language="markdown">
+<!-- Bug Report Template -->
+## Summary
+[Clear summary of bug]
+
+## Steps to Reproduce
 1. [Step one]
 2. [Step two]
 
@@ -27,6 +47,16 @@
 
 ## Actual Behavior
 [What actually happens]
+
+<!-- Feature Request / Task Template -->
+## Summary
+[Clear summary of feature or task]
+
+## Motivation & Context
+[Why this is needed / context]
+
+## Proposed Implementation / Desired Behavior
+[What should be implemented or changed]
     </code>
   </pattern>
 
@@ -51,6 +81,40 @@
     </code>
     <explanation>
       Defer identity search until assignment is required. Apply a single consistent fallback whether email is missing or lookup finds zero results.
+    </explanation>
+  </pattern>
+
+  <pattern name="manual_issue_closure_template">
+    <description>Formalized workflow for manual issue closure (Not Planned / Duplicate)</description>
+    <code language="text">
+1. Identify closure category:
+   - "not planned": reason = "not_planned", comment explaining rationale.
+   - "duplicate": reason = "not_planned", comment referencing canonical issue (e.g., "Duplicate of #10"), apply duplicate label if available.
+2. Present proposed closure draft to user:
+   - State reason, any label modification, and exact comment text.
+   - Prompt via ask_followup_question: ["Approve and close issue", "Keep issue open", "Modify closing comment"].
+3. Halt execution until user response (Strict turn separation).
+4. Upon approval in subsequent turn:
+   - Post closing comment via add_issue_comment.
+   - Update issue status to closed (with state_reason: "not_planned" and label if applicable).
+    </code>
+    <explanation>
+      Ensures all non-merge issue closures are explicit, transparent, and user-approved with explanatory comments.
+    </explanation>
+  </pattern>
+
+  <pattern name="blanket_destructive_action_confirmation">
+    <description>Blanket confirmation protocol for terminal or destructive actions</description>
+    <code language="text">
+1. Any terminal/destructive operation (deleting local/remote branch, closing issue, deleting comment):
+   - Identify the exact target entity (e.g., branch name `issue-5-old-fix`).
+   - Present specific proposal to user via ask_followup_question.
+2. Even if the user gave a broad command ("clean up stale branches"):
+   - Do NOT execute batch deletions automatically.
+   - List the specific targets to be deleted and ask for explicit confirmation in a subsequent turn.
+    </code>
+    <explanation>
+      Protects against irreversible data loss and ensures user oversight for all destructive actions.
     </explanation>
   </pattern>
 

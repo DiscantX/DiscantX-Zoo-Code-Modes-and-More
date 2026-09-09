@@ -1,59 +1,79 @@
 <best_practices>
   <general_principles>
     <principle priority="high">
-      <name>Internal-Only Acceptance Criteria & Draft Precedence Override</name>
-      <description>Acceptance criteria are strictly private internal checklists for Roo to evaluate fix correctness. They must never be included in GitHub issues or public artifacts. However, if the user explicitly instructs the agent during Gate #1 draft review to include specific function names, code logic, or file paths in the public issue draft, the user's explicit directive overrides the default clean-description guideline (while strictly maintaining the rule against leaking internal Acceptance Criteria).</description>
+      <name>Internal-Only Acceptance Criteria &amp; Draft Precedence Override</name>
+      <description>Acceptance criteria are strictly private internal checklists for Roo to evaluate fix/implementation correctness. They must never be included in GitHub issues or public artifacts. However, if the user explicitly instructs the agent during Gate #1 draft review to include specific function names, code logic, or file paths in the public issue draft, the user's explicit directive overrides the default clean-description guideline (while strictly maintaining the rule against leaking internal Acceptance Criteria).</description>
       <rationale>Keeps public issues clean for third parties while giving Roo precise validation criteria and honoring explicit user customization requests.</rationale>
     </principle>
     <principle priority="high">
-      <name>Explicit Local Git Identity Scoping & Safe Command Batching</name>
-      <description>Whenever setting fallback or temporary Git identity values, MUST ALWAYS use explicit scope flags (`git config --local user.name "..."`, `git config --local user.email "..."`). Furthermore, non-interactive sequential setup or Git operations may be batched within a single execution turn to save API round-trips, but arbitrary shell chaining operators (`&`, `;`, PowerShell `& { ... }`) are strictly banned. Command batching must NEVER cross any mandatory approval gate (Gate #1, Gate #2, Gate #3).</description>
+      <name>Once-Per-Session Label Retrieval &amp; Semantic Label Matching</name>
+      <description>When preparing the first issue draft of a session, retrieve the repository's existing label list once via GitHub MCP tools (cache and reuse across subsequent drafts in the same session; do not query at initialization). Semantically match the classified issue type against existing labels by meaning rather than exact string (e.g., "bug" vs "type: bug" vs "defect", "enhancement" vs "feature"). If a reasonable match exists, propose it in the draft for user review at Gate #1. If no match exists, propose no label. Never create new repository-wide labels as a side effect of drafting an issue.</description>
+      <rationale>Respects existing repository taxonomy without cluttering repositories with unsolicited new label definitions.</rationale>
+    </principle>
+    <principle priority="high">
+      <name>Type-Aware Language Across the Issue Lifecycle</name>
+      <description>Derive the issue type (bug report, feature request, task, etc.) from the same classification used for label matching. Consistently apply type-appropriate phrasing across all drafted questions, status messages, branch naming contexts, commit messages, diff reviews, and PR descriptions (e.g., "fix" for bug reports, "implement" or "add" for feature requests/tasks).</description>
+      <rationale>Prevents confusing or inaccurate terminology (e.g., calling a new feature request a "fix").</rationale>
+    </principle>
+    <principle priority="high">
+      <name>Explicit Local Git Identity Scoping &amp; Safe Command Batching</name>
+      <description>Whenever setting fallback or temporary Git identity values, MUST ALWAYS use explicit scope flags (`git config --local user.name "..."`, `git config --local user.email "..."`). Furthermore, non-interactive sequential setup or Git operations may be batched within a single execution turn to save API round-trips, but arbitrary shell chaining operators (`&amp;`, `;`, PowerShell `&amp; { ... }`) are strictly banned. Command batching must NEVER cross any mandatory approval gate (Gate #1, Gate #2, Gate #3, or Manual Closure Gate).</description>
       <rationale>Prevents global scope side-effects, syntax errors from shell operators, and premature gate bypassing.</rationale>
     </principle>
     <principle priority="high">
       <name>Gate #1 Universal Enforcement on Duplicate Overrides</name>
-      <description>Selecting "Create new issue" after a duplicate search menu does NOT bypass Gate #1. The agent MUST always draft the public issue Markdown and halt execution at Hard Stop Gate #1 to present the draft and get explicit user confirmation before calling create_issue.</description>
+      <description>Selecting "Create new issue" after a duplicate search menu does NOT bypass Gate #1. The agent MUST always draft the public issue Markdown (including proposed labels) and halt execution at Hard Stop Gate #1 to present the draft and get explicit user confirmation before calling create_issue.</description>
       <rationale>Ensures human review of all issues even when overriding duplicate detection.</rationale>
     </principle>
     <principle priority="high">
-      <name>Conditional Issue Assignment & Lazy Identity Resolution</name>
-      <description>Resolve stakeholder identity lazily and only when an issue will remain open without an immediate automated fix (e.g., when the user declines an immediate fix). When retrieving local configuration, batch queries sequentially into as few turns as possible. If local identity info is unset, OR if the account search returns zero matching accounts, apply the unified fallback: assign the default repository owner if known, or prompt the user via `ask_followup_question` for the assignee handle. Never improvise alternate lookup strategies. Do not resolve identity or assign if the issue is being fixed immediately.</description>
+      <name>Conditional Issue Assignment &amp; Lazy Identity Resolution</name>
+      <description>Resolve stakeholder identity lazily and only when an issue will remain open without an immediate automated fix/implementation (e.g., when the user declines immediate action). When retrieving local configuration, batch queries sequentially into as few turns as possible. If local identity info is unset, OR if the account search returns zero matching accounts, apply the unified fallback: assign the default repository owner if known, or prompt the user via `ask_followup_question` for the assignee handle. Never improvise alternate lookup strategies. Do not resolve identity or assign if the issue is being worked on immediately.</description>
       <rationale>Eliminates unnecessary API calls upfront and ensures consistent, predictable fallback behavior for both missing info and zero search matches.</rationale>
     </principle>
     <principle priority="high">
-      <name>Exclusive Fix Delegation & No Direct File Editing</name>
+      <name>Exclusive Delegation &amp; No Direct File Editing</name>
       <description>The issue-management mode does not have file-editing permissions and must never perform file edits under any circumstances. All code modifications must be delegated to a dedicated implementation mode (Code or Orchestrator). There is no fallback to self-editing. Control returns to github-issue mode to review diffs and test results at Gate #3.</description>
       <rationale>Maintains strict separation of responsibilities between issue/PR orchestration and code implementation.</rationale>
     </principle>
     <principle priority="high">
-      <name>Mandatory Duplicate Search Interception & Prompting</name>
-      <description>Whenever <code>search_issues</code> returns a matching hit (open or closed), internal reasoning alone is insufficient—the agent MUST halt and explicitly prompt the user with choices (a) Link as related, (b) Comment on existing issue, or (c) Create new issue anyway before proceeding.</description>
+      <name>Mandatory Duplicate Search Interception &amp; Prompting</name>
+      <description>Whenever <code>search_issues</code> returns a matching hit (open or closed), internal reasoning alone is insufficient—the agent MUST halt and explicitly prompt the user with choices (a) Link as related, (b) Close as duplicate / comment on existing issue, or (c) Create new issue anyway before proceeding.</description>
       <rationale>Prevents duplicate issue creation and ensures user control over issue tracking.</rationale>
     </principle>
     <principle priority="high">
-      <name>Mandatory User Confirmation Gates & Strict Turn Separation</name>
-      <description>Always pause and ask the user before attempting a fix and before committing, pushing, or opening PRs (Hard Stop Gate #3). Furthermore, generating drafts or fix reviews and issuing tool calls must never happen in the same reasoning turn; the agent must halt and wait for explicit human response in a subsequent turn. Sub-modes (Code/Orchestrator) are strictly restricted to file modifications and local testing and must never commit or push.</description>
+      <name>Mandatory User Confirmation Gates &amp; Strict Turn Separation</name>
+      <description>Always pause and ask the user before attempting work (Gate #2) and before committing, pushing, or opening PRs (Hard Stop Gate #3). Furthermore, generating drafts or reviews and issuing tool calls must never happen in the same reasoning turn; the agent must halt and wait for explicit human response in a subsequent turn. Sub-modes (Code/Orchestrator) are strictly restricted to file modifications and local testing and must never commit or push.</description>
       <rationale>Ensures human-in-the-loop control over code modifications, verifies intent, and prevents implicit gate bypassing.</rationale>
     </principle>
     <principle priority="high">
-      <name>PR Merge Attempt & Graceful Failure Handling (Phase 6)</name>
-      <description>At the merge-decision point, always offer the user the choice to merge or leave the PR open for review without pre-evaluating permissions or claiming verified eligibility. If the user chooses to merge, attempt the merge directly via GitHub MCP. If the merge fails (permission error, branch protection, or failing checks), treat this as a normal expected outcome: report the actual error plainly, never claim success, do not retry automatically, and continue to workspace restoration (<code>git checkout main && git pull</code>).</description>
+      <name>Formalized Manual Issue Closure &amp; Approval Gate</name>
+      <description>Recognize two distinct closure mechanisms: (1) automated closure via native PR merge webhooks for resolved issues (no extra confirmation needed), and (2) formalized direct manual closure for "not planned" or "duplicate" issues. For manual closures, set platform state to `closed` with `state_reason: "not_planned"`, apply duplicate label if applicable, and provide an explanatory closing comment when not self-evident. The agent MUST draft the closure details (reason, label changes, comment) and halt for explicit user approval via `ask_followup_question` with strict turn separation before executing any manual closure.</description>
+      <rationale>Provides a safe, reviewed mechanism for deliberate non-code closures without opening loopholes for speculative closures.</rationale>
+    </principle>
+    <principle priority="high">
+      <name>Blanket Confirmation for Terminal or Destructive Actions</name>
+      <description>Any action that is terminal, destructive, or difficult to reverse (deleting local or remote branches, deleting comments, closing issues, resetting git commits) MUST NOT be executed without presenting the specific proposed action and receiving explicit confirmation in a subsequent turn. Broad user prompts (e.g., "clean up stale branches") do not constitute consent for specific deletions; individual targets must be proposed and explicitly confirmed.</description>
+      <rationale>Protects repository integrity from unintended permanent data loss or disruptive actions.</rationale>
+    </principle>
+    <principle priority="high">
+      <name>PR Merge Attempt &amp; Graceful Failure Handling (Phase 6)</name>
+      <description>At the merge-decision point, always offer the user the choice to merge or leave the PR open for review without pre-evaluating permissions or claiming verified eligibility. If the user chooses to merge, attempt the merge directly via GitHub MCP. If the merge fails (permission error, branch protection, or failing checks), treat this as a normal expected outcome: report the actual error plainly, never claim success, do not retry automatically, and continue to workspace restoration (<code>git checkout main &amp;&amp; git pull</code>).</description>
       <rationale>Avoids unsupportable pre-checks, prevents stuck retry loops, and guarantees accurate reporting to the user.</rationale>
     </principle>
     <principle priority="high">
-      <name>Strict PR Lifecycle & Absolute Prohibition of Direct Pushes or Manual/Speculative Closures</name>
-      <description>Bypassing Pull Request creation (e.g., pushing straight to main/master) and manually or speculatively closing issues via the Issues API (`update_issue`) are strictly prohibited under all circumstances. All fixes must be pushed to a regex-compliant feature branch (`issue-{number}-{short-slug}`), submitted via a rich Pull Request using `create_pull_request` with plain-text closing keywords (`Fixes #{number}`), and left open exclusively for automated GitHub webhook closure upon merge.</description>
+      <name>Strict PR Lifecycle &amp; Prohibition of Direct Pushes or Speculative Closures</name>
+      <description>Bypassing Pull Request creation (e.g., pushing straight to main/master) and speculatively closing issues via the Issues API (`update_issue`) during PR creation are strictly prohibited. All fixes and feature additions must be pushed to a regex-compliant feature branch (`issue-{number}-{short-slug}`), submitted via a rich Pull Request using `create_pull_request` with plain-text closing keywords (`Fixes #{number}` or `Resolves #{number}`), and left open for automated GitHub webhook closure upon merge.</description>
       <rationale>Enforces traceability, audit trails, and automated GitHub lifecycle integration without speculative or premature state changes.</rationale>
     </principle>
   </general_principles>
   
   <code_conventions>
     <convention category="branch_naming">
-      <rule>Branch names MUST strictly match the regex pattern <code>^issue-[0-9]+-[a-z0-9-]+$</code> (format: <code>issue-{number}-{short-slug}</code>). Bare issue numbers (e.g., <code>issue-7</code>), custom prefixes (e.g., <code>fix-issue-5</code>), and standard gitflow prefixes (e.g., <code>fix/</code>, <code>feature/</code>, <code>bugfix/</code>) are <strong>STRICTLY FORBIDDEN</strong> and will fail TC-4.3 evaluation checks.</rule>
+      <rule>Branch names MUST strictly match the regex pattern <code>^issue-[0-9]+-[a-z0-9-]+$</code> (format: <code>issue-{number}-{short-slug}</code>). Bare issue numbers (e.g., <code>issue-7</code>), custom prefixes (e.g., <code>fix-issue-5</code>), and standard gitflow prefixes (e.g., <code>fix/</code>, <code>feature/</code>, <code>bugfix/</code>) are <strong>STRICTLY FORBIDDEN</strong>.</rule>
       <examples>
         <good>issue-5-async-await-fix</good>
         <good>issue-7-connection-leak-fix</good>
-        <good>issue-3-app-env-override-fix</good>
+        <good>issue-12-add-auth-feature</good>
         <bad>issue-7</bad>
         <bad>fix/issue-5</bad>
         <bad>feature/issue-105</bad>
@@ -63,41 +83,47 @@
     </convention>
     
     <convention category="commit_and_pr_messages">
-      <rule>Include plain-text issue references in commit titles, commit bodies, and PR descriptions. Never format references as Markdown links.</rule>
+      <rule>Include plain-text issue references in commit titles, commit bodies, and PR descriptions using type-appropriate verbs. Never format references as Markdown links.</rule>
       <examples>
-        <good>Fixes #42</good>
-        <good>Resolves #3</good>
+        <good>Fix settings crash when offline (Fixes #42)</good>
+        <good>Implement OAuth2 authentication flow (Resolves #103)</good>
+        <good>Refactor database pooling config (Addresses #55)</good>
         <bad>[#42](https://github.com/owner/repo/issues/42)</bad>
-        <bad>Fixes #42</bad>
       </examples>
     </convention>
   </code_conventions>
   
   <quality_checklist>
     <category name="before_issue_creation">
+      <item>Classify issue type (bug, feature request, task) to derive type-aware terminology</item>
+      <item>Retrieve repository labels once per session on the first issue draft; semantically match type against existing labels without creating new labels</item>
       <item>Parse repository origin URL from `git config --get remote.origin.url`</item>
-      <item>Check for duplicate open or closed issues using `search_issues` and explicitly prompt the user with choices (a, b, c) upon any matching hit</item>
+      <item>Check for duplicate open or closed issues using `search_issues` and explicitly prompt the user with choices upon any matching hit</item>
       <item>Verify acceptance criteria are excluded from public issue markdown (unless user explicitly overrides during Gate #1 draft review)</item>
-      <item>Get explicit user confirmation on the drafted issue Markdown BEFORE creating the issue on GitHub (Hard Stop Gate #1: strictly prohibited from calling `create_issue` in the same turn the draft is generated, even when overriding duplicate search results). If user requests custom description modifications, pause and wait for user's raw text input.</item>
+      <item>Get explicit user confirmation on the drafted issue Markdown and proposed label BEFORE creating the issue on GitHub (Hard Stop Gate #1: strictly prohibited from calling `create_issue` in the same turn the draft is generated, even when overriding duplicate search results).</item>
     </category>
-    <category name="before_fixing">
-      <item>Ask user explicitly if we should attempt a fix (Hard Stop Gate #2)</item>
-      <item>If user declines fix, lazily resolve stakeholder identity by batching local config lookups and searching GitHub. If unset or no match found, apply unified fallback (default owner or prompt user), then assign the open issue.</item>
-      <item>If user approves fix, leave issue unassigned and delegate implementation to Code or Orchestrator mode (github-issue mode has no file editing capabilities).</item>
-      <item>Ensure fix is developed on a dedicated branch matching strict regex <code>^issue-[0-9]+-[a-z0-9-]+$</code> (bare numbers and `fix/`/`feature/`/`bugfix/` prefixes are strictly forbidden)</item>
+    <category name="before_work">
+      <item>Ask user explicitly if we should attempt work on a new feature branch using type-appropriate phrasing (Hard Stop Gate #2)</item>
+      <item>If user declines immediate action, lazily resolve stakeholder identity by batching local config lookups and searching GitHub. If unset or no match found, apply unified fallback (default owner or prompt user), then assign the open issue.</item>
+      <item>If user approves immediate action, leave issue unassigned and delegate implementation to Code or Orchestrator mode (github-issue mode has no file editing capabilities).</item>
+      <item>Ensure work is developed on a dedicated branch matching strict regex <code>^issue-[0-9]+-[a-z0-9-]+$</code> (bare numbers and `fix/`/`feature/`/`bugfix/` prefixes are strictly forbidden)</item>
     </category>
     <category name="before_pr_creation">
       <item>Verify branch name matches exact regex pattern <code>^issue-[0-9]+-[a-z0-9-]+$</code>.</item>
       <item>Ensure sub-mode (Code/Orchestrator) only modified files and ran tests without committing or pushing.</item>
       <item>Get explicit user confirmation (Hard Stop Gate #3) on git diff and test output BEFORE executing <code>git commit</code>, <code>git push</code>, or creating the PR via `create_pull_request`.</item>
-      <item>Ensure commit and PR body use raw plain-text <code>Fixes #{number}</code> references (never bypass PR creation or push straight to main)</item>
-      <item>Verify NO manual issue closure API calls are made (`update_issue` state closure is strictly forbidden)</item>
+      <item>Ensure commit and PR body use raw plain-text <code>Fixes #{number}</code> or <code>Resolves #{number}</code> references (never bypass PR creation or push straight to main)</item>
+      <item>Verify NO speculative manual issue closure API calls are made during PR creation</item>
     </category>
     <category name="after_pr_creation">
       <item>Offer the user the choice to merge the PR or leave it open for maintainer review without pre-evaluating permissions.</item>
       <item>If user chooses to merge, attempt the merge directly. If the merge fails, report the error plainly, never claim false success, do not retry automatically, and proceed to workspace restoration.</item>
-      <item>Execute Phase 6 post-merge cleanup: return local workspace to main via <code>git checkout main && git pull</code> and delete feature branch upon successful merge (or keep remote branch intact if merge failed or was skipped).</item>
-      <item>Task completion is strictly invalid until Phase 6 is fully executed (merge offer/execution, local workspace restoration via <code>git checkout main && git pull</code>, and cleanup). Calling `attempt_completion` prematurely is strictly forbidden.</item>
+      <item>Execute Phase 6 post-merge cleanup: return local workspace to main via <code>git checkout main &amp;&amp; git pull</code> and delete feature branch upon successful merge (or keep remote branch intact if merge failed or was skipped).</item>
+      <item>Task completion is strictly invalid until Phase 6 is fully executed. Calling `attempt_completion` prematurely is strictly forbidden.</item>
+    </category>
+    <category name="manual_closure_and_destructive_actions">
+      <item>For manual closures (not planned, duplicate): draft closure reason, comment, and label change; halt at explicit approval gate with turn separation before calling update_issue.</item>
+      <item>For any terminal or destructive action (branch deletion, issue closure, comment deletion): present specific candidate target and obtain explicit human confirmation in a subsequent turn, even when prompted with broad cleanup requests.</item>
     </category>
   </quality_checklist>
 </best_practices>
