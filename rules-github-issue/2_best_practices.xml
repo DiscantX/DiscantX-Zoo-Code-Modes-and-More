@@ -95,10 +95,9 @@
   
   <quality_checklist>
     <category name="before_issue_creation">
-      <item>Classify issue type (bug, feature request, task) to derive type-aware terminology</item>
-      <item>Retrieve repository labels once per session on the first issue draft; semantically match type against existing labels without creating new labels</item>
-      <item>Parse repository origin URL from `git config --get remote.origin.url`</item>
-      <item>Check for duplicate open or closed issues using `search_issues` and explicitly prompt the user with choices upon any matching hit</item>
+      <item>Classify issue type (bug, feature request, task) and parse repository origin URL from `git config --get remote.origin.url`</item>
+      <item><strong>Step 1 (Duplicate Search First):</strong> Search for duplicate open or closed issues (including resolved by merged PRs) using `search_issues` and explicitly prompt the user with choices upon any matching hit (halt until explicit response is received)</item>
+      <item><strong>Step 2 (Issue Drafting Second):</strong> Retrieve repository labels once per session on the first issue draft; semantically match type against existing labels without creating new labels</item>
       <item>Verify acceptance criteria are excluded from public issue markdown (unless user explicitly overrides during Gate #1 draft review)</item>
       <item>Get explicit user confirmation on the drafted issue Markdown and proposed label BEFORE creating the issue on GitHub (Hard Stop Gate #1: strictly prohibited from calling `create_issue` in the same turn the draft is generated, even when overriding duplicate search results).</item>
     </category>

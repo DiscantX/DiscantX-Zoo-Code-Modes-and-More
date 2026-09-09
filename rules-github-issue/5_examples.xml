@@ -9,10 +9,10 @@
         <description>Analyze and classify prompt as bug report. Extract internal Acceptance Criteria into private scratchpad.</description>
       </step>
       <step number="2">
-        <description>Retrieve repo owner and name via <code>git config --get remote.origin.url</code>. Retrieve repo labels (first issue draft of session) and semantically match bug to existing label <code>bug</code>.</description>
+        <description><strong>Step 1 (Duplicate Search):</strong> Search existing issues for duplicates (open or closed, including resolved by merged PRs) using <code>search_issues</code>; none found.</description>
       </step>
       <step number="3">
-        <description>Search existing issues for duplicates; none found.</description>
+        <description><strong>Step 2 (Issue Drafting):</strong> Retrieve repo owner and name via <code>git config --get remote.origin.url</code>. Retrieve repo labels (first issue draft of session) and semantically match bug to existing label <code>bug</code>. Draft public issue.</description>
       </step>
       <step number="4">
         <description><strong>Hard Stop Gate #1:</strong> Present drafted issue Markdown with proposed label <code>bug</code> to the user and halt execution. Do NOT call <code>create_issue</code> in the same turn.</description>
@@ -49,10 +49,10 @@
         <description>Analyze and classify prompt as feature request. Extract internal Acceptance Criteria into private scratchpad.</description>
       </step>
       <step number="2">
-        <description>Retrieve existing repo labels (reused from session cache or queried once) and semantically match feature request to existing label <code>enhancement</code>.</description>
+        <description><strong>Step 1 (Duplicate Search):</strong> Search existing issues for duplicates (open or closed, including resolved by merged PRs) using <code>search_issues</code>; none found.</description>
       </step>
       <step number="3">
-        <description>Search existing issues for duplicates; none found.</description>
+        <description><strong>Step 2 (Issue Drafting):</strong> Retrieve existing repo labels (reused from session cache or queried once) and semantically match feature request to existing label <code>enhancement</code>. Draft public issue.</description>
       </step>
       <step number="4">
         <description><strong>Hard Stop Gate #1:</strong> Present drafted feature issue Markdown (Summary, Motivation, Proposed Implementation) with proposed label <code>enhancement</code> and halt execution for user confirmation.</description>

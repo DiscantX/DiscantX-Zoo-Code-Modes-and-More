@@ -23,9 +23,38 @@
   </initialization_steps>
   
   <main_workflow>
-    <phase name="issue_drafting">
-      <description>Copyedit, label, and structure the public issue (without Acceptance Criteria)</description>
+    <phase name="duplicate_search">
+      <description>Step 1: Search for duplicates and perform semantic duplicate analysis before drafting</description>
       <steps>
+        <step>
+          <strong>Mandatory Duplicate Search Step:</strong>
+          Query existing GitHub issues using MCP tools (e.g., <code>search_issues</code> or <code>list_issues</code>) to check for matching or related issues (including open issues, closed issues, and issues resolved by a merged pull request).
+        </step>
+        <step>Briefly check the titles and descriptions of top search results and provide a quick, one-sentence recommendation explaining whether each candidate is an actual semantic duplicate or just happens to share keywords.</step>
+        <step>
+          <strong>Halt &amp; Explicit Choice Gate:</strong>
+          If a matching issue is found (open or closed, including one resolved by a merged pull request), <strong>HALT</strong> and present the user with an explicit choice via <code>ask_followup_question</code>:
+          <ul>
+            <li>Link the new report to the existing issue</li>
+            <li>Close/comment as a duplicate</li>
+            <li>Proceed to create a new issue anyway ("Create new issue")</li>
+          </ul>
+          <strong>CRITICAL RULE:</strong> Do not proceed past this step until the user responds in a subsequent turn. The agent's own conclusion about which option is correct is never sufficient on its own.
+        </step>
+        <step>
+          <strong>MANDATORY DUPLICATE OVERRIDE RULE:</strong>
+          Even if the user explicitly selects "Create new issue anyway" (override), this choice does <strong>NOT</strong> bypass Gate #1. The agent MUST proceed to the separate issue-drafting step.
+        </step>
+      </steps>
+    </phase>
+
+    <phase name="issue_drafting">
+      <description>Step 2: Draft the issue for approval (Only after duplicate decision is fully resolved)</description>
+      <steps>
+        <step>
+          <strong>Sequential Prerequisite:</strong>
+          Begin drafting the public issue only after the duplicate decision (if any) is fully resolved—whether no duplicate was found during duplicate search, or the user explicitly chose "create new issue anyway".
+        </step>
         <step>
           <strong>Once-Per-Session Label Retrieval &amp; Semantic Matching:</strong>
           When preparing the first issue draft of a session, retrieve the repository's existing label list via GitHub MCP tools (cache/reuse for subsequent issues in the same session). Semantically match the classified issue type (bug, feature request, task, etc.) against the existing labels by meaning rather than exact string (e.g., matching "bug" vs "type: bug" vs "defect", or "enhancement" vs "feature").
@@ -48,19 +77,6 @@
           <strong>MANDATORY HARD STOP GATE #1 (STRICT ISOLATION &amp; TURN SEPARATION):</strong>
           Display the complete drafted issue (Title, Proposed Labels, and Body Markdown) to the user and invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve and create issue", "Request edits to draft", "Cancel"]</code>.
           <strong>CRITICAL RULE:</strong> The execution agent is <strong>STRICTLY PROHIBITED</strong> from calling the <code>create_issue</code> MCP tool in the same reasoning turn it generates or revises the issue draft. You MUST present the draft (including proposed label), invoke <code>ask_followup_question</code>, and halt execution until the user responds in a subsequent turn. Treating "I have decided this is correct" as authorization without an explicit response captured from the user is a fatal protocol violation.
-        </step>
-      </steps>
-    </phase>
-    
-    <phase name="duplicate_search">
-      <description>Search existing issues for duplicates and perform smart semantic analysis</description>
-      <steps>
-        <step>Query GitHub issues using MCP tools (e.g., search_issues or list_issues).</step>
-        <step>Briefly check the titles and descriptions of the top search results before showing the choice menu.</step>
-        <step>Provide a quick, one-sentence recommendation explaining whether each candidate is an actual semantic duplicate or just happens to share the same keywords.</step>
-        <step>
-          If similar issue found, present options to user: (a) Link as related, (b) Close as duplicate / comment on existing issue, or (c) Create new issue.
-          <strong>MANDATORY DUPLICATE OVERRIDE RULE:</strong> Even if the user selects "Create new issue" (override), this choice does <strong>NOT</strong> bypass Gate #1. The agent MUST ALWAYS proceed to issue drafting, present the drafted public Markdown issue (with proposed label) to the user, and HALT execution at Hard Stop Gate #1. Calling <code>create_issue</code> without first presenting the draft and receiving explicit user confirmation is strictly prohibited under all circumstances.
         </step>
       </steps>
     </phase>
