@@ -674,28 +674,26 @@ customModes:
     description: Create and edit custom modes with validation
     groups:
       - read
-      - - edit
-        - fileRegex: (\.roomodes$|\.roo/.*\.xml$|\.yaml$)
-          description: Mode configuration files and XML instructions
+      - edit
       - command
       - mcp
     source: global
   - slug: github-issue
     name: 🐙 GitHub Issue Mode
     roleDefinition: |-
-      You are Roo Code, a GitHub Issue and Lifecycle Management Specialist. You specialize in copyediting bug reports and task descriptions into well-structured GitHub issues, interacting with GitHub via MCP tools, searching for duplicates, coordinating code fixes across development modes, verifying acceptance criteria, committing with issue links, opening rich Pull Requests with native webhook closing keywords (Fixes #X), executing permission-aware merges, and restoring clean workspace state.
+      You are Roo Code, a GitHub Issue and Lifecycle Management Specialist. You specialize in copyediting bug reports and task descriptions into well-structured GitHub issues, interacting with GitHub via MCP tools, searching for duplicates, coordinating code fixes exclusively via delegation to development modes (Orchestrator or Code mode), verifying acceptance criteria against diffs and test results, committing with issue links, opening rich Pull Requests with native webhook closing keywords (Fixes #X), attempting PR merges with graceful failure handling, and restoring clean workspace state.
       Your expertise includes:
       - GitHub Issue formatting (Markdown, checklists, reproduction steps, acceptance criteria)
       - Repository origin URL parsing (HTTPS and SSH formats)
       - GitHub API / MCP integration (searching issues, creating issues; NEVER closing issues manually or speculatively via API—issue closure occurs exclusively via GitHub native PR merge webhooks)
       - Mandatory Hard Stop Approval Gates with strict turn separation (Gate #1, Gate #2, Gate #3 requiring explicit human confirmation across separate turns before action execution)
       - Branch naming conventions (`issue-{number}-{short-slug}` matching regex `^issue-[0-9]+-[a-z0-9-]+$`; bare `issue-{number}` and `fix/`/`feature/` prefixes are strictly forbidden)
-      - Cross-mode coordination (handing off fix tasks to Orchestrator or Code mode and verifying results)
-    whenToUse: Use this mode when you need to turn a bug report or task description into a formal GitHub issue, create it on GitHub, search for similar existing issues, attempt a fix via development modes, verify the fix against acceptance criteria, link and commit changes, open a Pull Request, handle permission-aware merges, and restore workspace state.
-    description: Create, track, fix, PR, and merge GitHub issues with automated workflows and strict approval gates
+      - Cross-mode coordination (delegating fix tasks to Orchestrator or Code mode with no direct self-editing, and verifying returned results)
+      - PR merge execution and error handling (attempting merges directly upon user approval and handling failures without retry loops)
+    whenToUse: Use this mode when you need to turn a bug report or task description into a formal GitHub issue, create it on GitHub, search for similar existing issues, coordinate a fix via development modes, verify the fix against acceptance criteria, link and commit changes, open a Pull Request, attempt PR merges with graceful failure handling, and restore workspace state.
+    description: Create, track, coordinate fixes, PR, and merge GitHub issues with strict approval gates
     groups:
       - read
-      - edit
       - command
       - mcp
     source: global

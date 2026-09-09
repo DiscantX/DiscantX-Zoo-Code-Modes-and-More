@@ -33,6 +33,18 @@
       <solution>Report test failures or unmet acceptance criteria back to the user before attempting closure.</solution>
     </scenario>
     <scenario>
+      <situation>Attempted direct file editing within github-issue mode</situation>
+      <solution>Block operation immediately. github-issue mode has no file-editing permissions. All code modifications must be delegated to Code or Orchestrator mode.</solution>
+    </scenario>
+    <scenario>
+      <situation>Stakeholder identity lookup returns zero results or local info is missing</situation>
+      <solution>Apply unified fallback: assign default repository owner if known, or prompt user via `ask_followup_question` to specify the assignee handle.</solution>
+    </scenario>
+    <scenario>
+      <situation>PR merge attempt fails (permissions, branch protection, or API error)</situation>
+      <solution>Report the error plainly to the user, never claim false success, do not retry automatically, skip remote branch deletion, and proceed directly to workspace restoration (`git checkout main && git pull`).</solution>
+    </scenario>
+    <scenario>
       <situation>Attempted direct API or speculative/optimistic issue closure (`github.update_issue` with state closed or manual closure calls)</situation>
       <solution>Block execution immediately. Reiterate that issue closure is strictly forbidden as an agent-initiated action and occurs exclusively and automatically via GitHub native PR merge webhooks using plain-text keywords in the PR description.</solution>
     </scenario>
@@ -46,7 +58,7 @@
     </scenario>
     <scenario>
       <situation>Attempted premature task completion before Phase 6 workspace cleanup</situation>
-      <solution>Block completion, execute CAN_MERGE check, offer/execute PR merge, restore workspace via `git checkout main && git pull`, and delete remote feature branch.</solution>
+      <solution>Block completion, offer/attempt PR merge, restore workspace via `git checkout main && git pull`, and clean up branch.</solution>
     </scenario>
   </error_scenarios>
 </error_handling>

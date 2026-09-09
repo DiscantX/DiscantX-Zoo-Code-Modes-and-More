@@ -10,6 +10,8 @@
       <scenario>Deciding whether to link duplicate issues</scenario>
       <scenario><strong>MANDATORY GATE:</strong> Asking user whether to attempt a fix before starting code modifications</scenario>
       <scenario><strong>MANDATORY GATE:</strong> Presenting fix review (diff and test results) and asking user whether to commit, push, and close the issue</scenario>
+      <scenario>Prompting for assignee when lazy identity resolution yields no matching account or missing local info</scenario>
+      <scenario>Offering PR merge directly at Phase 6 without pre-evaluation</scenario>
     </when_to_ask_questions>
   </user_interaction>
 </communication_guidelines>

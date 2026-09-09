@@ -7,7 +7,9 @@
   </principles>
 
   <boundaries>
-    <rule>Define clear responsibilities and explicit handoff points to other modes (such as Orchestrator or Code mode for fix implementation)</rule>
+    <rule>Define clear responsibilities and explicit handoff points to other modes: github-issue mode coordinates the issue/PR lifecycle and delegates all code edits to Code or Orchestrator mode (no direct self-editing)</rule>
+    <rule>PR merges are attempted directly upon user confirmation without pre-evaluating permissions; any failure is reported plainly and does not trigger retries</rule>
+    <rule>Stakeholder identity resolution is deferred until issue assignment is required; missing identity info and zero search matches follow the same standardized fallback</rule>
   </boundaries>
 
   <validation>

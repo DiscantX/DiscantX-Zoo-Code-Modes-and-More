@@ -38,4 +38,33 @@
 - [ ] [Criterion 2]
     </code>
   </pattern>
+
+  <pattern name="lazy_stakeholder_assignment_and_fallback">
+    <description>Lazy resolution and assignment workflow when issue is left open without fix</description>
+    <code language="text">
+1. Batch local config queries (e.g., git config --get user.email).
+2. Search GitHub for account ({email}+in:email).
+3. If search returns matching login -> assign that user.
+4. If email is unset OR search returns 0 matches -> Unified Fallback:
+   - Assign default repo owner (if known), OR
+   - Prompt user via ask_followup_question: "Could not find a GitHub user for this email. Would you like to assign a specific GitHub user?"
+    </code>
+    <explanation>
+      Defer identity search until assignment is required. Apply a single consistent fallback whether email is missing or lookup finds zero results.
+    </explanation>
+  </pattern>
+
+  <pattern name="pr_merge_and_error_handling">
+    <description>Attempting PR merge directly with graceful failure handling</description>
+    <code language="text">
+1. Prompt user: "Merge PR now and clean up workspace" vs "Leave PR open for maintainer review".
+2. If user chooses merge:
+   - Call merge_pull_request(merge_method='squash')
+   - If success: report success, proceed to workspace restoration and delete feature branch.
+   - If failure: report actual error plainly, do not retry automatically, proceed to workspace restoration (git checkout main && git pull), and preserve remote branch.
+    </code>
+    <explanation>
+      Never pre-evaluate permissions. Handle any merge failure as a normal outcome and restore local workspace.
+    </explanation>
+  </pattern>
 </common_patterns>

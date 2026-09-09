@@ -38,15 +38,17 @@ The `Modes` repo contains a file at `rules-github-issue\docs\test_matrix.md` tha
 When providing the user with an updated version of the test matrix, you must output the Markdown inside a plain raw text code block (` ```markdown `) so it can be directly copied or downloaded as a raw file without rendering artifacts. Do not present it as pre-rendered Markdown text in normal chat output; this is a common formatting mistake that must be avoided.
 
 ### Core Protocol Rules & Guardrails
+### Core Protocol Rules & Guardrails
 
 - **Internal-Only Acceptance Criteria (AC):** Acceptance Criteria are extracted strictly for private scratchpad verification and **MUST NEVER** leak into public GitHub issue bodies.
-- **Identity & Permission Resolution:** Resolve `STAKEHOLDER_USERNAME` via `git config user.email` and GitHub search API (`{email}+in:email`). Evaluate `CAN_MERGE` permission flags (`admin`, `write`, `maintain` vs. `read`).
-- **Conditional Issue Assignment:** Assign `STAKEHOLDER_USERNAME` **ONLY** if an issue remains open without an immediate fix. Leave unassigned if an immediate code fix is initiated.
+- **No Direct File Editing:** `GitHub Issue Mode` has no file-editing tool permissions and is strictly prohibited from editing files directly. All code changes must be delegated to an implementation mode (Code or Orchestrator).
+- **Lazy Identity Resolution & Unified Fallback:** Stakeholder identity (`STAKEHOLDER_USERNAME`) is resolved lazily only when an issue remains open without an immediate fix. If local email is unset or the search query returns zero matching accounts, apply the unified fallback: assign the default repository owner or prompt the user via `ask_followup_question`.
+- **Conditional Issue Assignment:** Assign stakeholder **ONLY** if an issue remains open without an immediate fix. Leave unassigned if an immediate code fix is initiated.
 - **Mandatory Hard Stop Approval Gates:**
   1. **Gate #1:** Stop and wait for explicit human approval on drafted issue Markdown before calling `create_issue`.
   2. **Gate #2:** Stop and wait for explicit human approval before creating branches or attempting code modifications.
   3. **Gate #3:** Stop and wait for explicit human review of `git diff` and test suite execution in GitHub Issue Mode before calling `git push` or `create_pull_request`. Sub-modes (Code/Orchestrator) are strictly prohibited from pushing or creating PRs directly.
 - **Branch Naming Standard:** Dedicated feature branches **MUST** strictly follow the pattern `issue-{number}-{short-slug}` (e.g., `issue-14-analytics-division-fix`). Standalone `issue-{number}` or generic prefixes (`fix/`, `feature/`) are prohibited.
 - **Native Webhook Automation:** **NEVER** manually close issues via the API. Pull Request descriptions must end with standalone plain-text keywords (e.g., `Fixes #14`) on their own line to trigger native GitHub webhook closures.
-- **Permission-Aware Merging:** Offer to execute PR merges via `merge_pull_request` **ONLY** if `CAN_MERGE` evaluates to `true`.
+- **Attempt-and-Handle-Failure Merging:** Offer PR merges directly without pre-evaluating permissions. If the user approves, attempt the merge via `merge_pull_request`; report any failure plainly without auto-retrying or claiming false success, and continue to workspace restoration.
 - **Workspace Hygiene & Lifecycle Completion:** A task **CANNOT** be marked as completed upon PR creation. The agent must restore the local workspace (`git checkout main && git pull`) and offer remote feature branch cleanup post-merge.

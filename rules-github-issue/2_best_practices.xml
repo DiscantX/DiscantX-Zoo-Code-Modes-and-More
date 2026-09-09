@@ -16,9 +16,14 @@
       <rationale>Ensures human review of all issues even when overriding duplicate detection.</rationale>
     </principle>
     <principle priority="high">
-      <name>Conditional Issue Assignment</name>
-      <description>Only assign the stakeholder (STAKEHOLDER_USERNAME resolved via user.email) to an issue if it will remain open without an immediate automated fix (including when the user declines an immediate fix or selects "No, do not attempt a fix", requiring an explicit `add_assignees` call). Do not assign if the issue is being fixed immediately in the active session.</description>
-      <rationale>Ensures accountability and follow-up ownership for issues left open without immediate resolution.</rationale>
+      <name>Conditional Issue Assignment & Lazy Identity Resolution</name>
+      <description>Resolve stakeholder identity lazily and only when an issue will remain open without an immediate automated fix (e.g., when the user declines an immediate fix). When retrieving local configuration, batch queries sequentially into as few turns as possible. If local identity info is unset, OR if the account search returns zero matching accounts, apply the unified fallback: assign the default repository owner if known, or prompt the user via `ask_followup_question` for the assignee handle. Never improvise alternate lookup strategies. Do not resolve identity or assign if the issue is being fixed immediately.</description>
+      <rationale>Eliminates unnecessary API calls upfront and ensures consistent, predictable fallback behavior for both missing info and zero search matches.</rationale>
+    </principle>
+    <principle priority="high">
+      <name>Exclusive Fix Delegation & No Direct File Editing</name>
+      <description>The issue-management mode does not have file-editing permissions and must never perform file edits under any circumstances. All code modifications must be delegated to a dedicated implementation mode (Code or Orchestrator). There is no fallback to self-editing. Control returns to github-issue mode to review diffs and test results at Gate #3.</description>
+      <rationale>Maintains strict separation of responsibilities between issue/PR orchestration and code implementation.</rationale>
     </principle>
     <principle priority="high">
       <name>Mandatory Duplicate Search Interception & Prompting</name>
@@ -31,9 +36,9 @@
       <rationale>Ensures human-in-the-loop control over code modifications, verifies intent, and prevents implicit gate bypassing.</rationale>
     </principle>
     <principle priority="high">
-      <name>Mandatory Post-Merge Cleanup & Lifecycle Completion (Phase 6)</name>
-      <description>Task completion is strictly invalid until Phase 6 is fully executed: CAN_MERGE evaluated, PR merge offered/executed, local workspace returned to main (<code>git checkout main && git pull</code>), and remote/local feature branches cleaned up.</description>
-      <rationale>Prevents stale local/remote branches, ensures correct webhook lifecycle closure, and keeps the workspace clean for subsequent tasks.</rationale>
+      <name>PR Merge Attempt & Graceful Failure Handling (Phase 6)</name>
+      <description>At the merge-decision point, always offer the user the choice to merge or leave the PR open for review without pre-evaluating permissions or claiming verified eligibility. If the user chooses to merge, attempt the merge directly via GitHub MCP. If the merge fails (permission error, branch protection, or failing checks), treat this as a normal expected outcome: report the actual error plainly, never claim success, do not retry automatically, and continue to workspace restoration (<code>git checkout main && git pull</code>).</description>
+      <rationale>Avoids unsupportable pre-checks, prevents stuck retry loops, and guarantees accurate reporting to the user.</rationale>
     </principle>
     <principle priority="high">
       <name>Strict PR Lifecycle & Absolute Prohibition of Direct Pushes or Manual/Speculative Closures</name>
@@ -70,14 +75,15 @@
   
   <quality_checklist>
     <category name="before_issue_creation">
+      <item>Parse repository origin URL from `git config --get remote.origin.url`</item>
       <item>Check for duplicate open or closed issues using `search_issues` and explicitly prompt the user with choices (a, b, c) upon any matching hit</item>
-      <item>Resolve STAKEHOLDER_USERNAME via git config user.email, ensuring any git config setup uses explicit `--local` scope flags (`git config --local user.name ...`, `git config --local user.email ...`)</item>
       <item>Verify acceptance criteria are excluded from public issue markdown (unless user explicitly overrides during Gate #1 draft review)</item>
       <item>Get explicit user confirmation on the drafted issue Markdown BEFORE creating the issue on GitHub (Hard Stop Gate #1: strictly prohibited from calling `create_issue` in the same turn the draft is generated, even when overriding duplicate search results). If user requests custom description modifications, pause and wait for user's raw text input.</item>
     </category>
     <category name="before_fixing">
-      <item>Ask user explicitly if we should attempt a fix</item>
-      <item>If user declines fix or selects "No, do not attempt a fix", call `add_assignees` to assign STAKEHOLDER_USERNAME to the open issue</item>
+      <item>Ask user explicitly if we should attempt a fix (Hard Stop Gate #2)</item>
+      <item>If user declines fix, lazily resolve stakeholder identity by batching local config lookups and searching GitHub. If unset or no match found, apply unified fallback (default owner or prompt user), then assign the open issue.</item>
+      <item>If user approves fix, leave issue unassigned and delegate implementation to Code or Orchestrator mode (github-issue mode has no file editing capabilities).</item>
       <item>Ensure fix is developed on a dedicated branch matching strict regex <code>^issue-[0-9]+-[a-z0-9-]+$</code> (bare numbers and `fix/`/`feature/`/`bugfix/` prefixes are strictly forbidden)</item>
     </category>
     <category name="before_pr_creation">
@@ -88,10 +94,10 @@
       <item>Verify NO manual issue closure API calls are made (`update_issue` state closure is strictly forbidden)</item>
     </category>
     <category name="after_pr_creation">
-      <item>Check CAN_MERGE flag before offering to merge the Pull Request.</item>
-      <item>Do NOT attempt to execute PR merges if the authenticated user lacks write/admin repository privileges.</item>
-      <item>Execute Phase 6 post-merge cleanup: return local workspace to main via <code>git checkout main && git pull</code> and delete local/remote feature branch upon merge.</item>
-      <item>Task completion is strictly invalid until Phase 6 is fully executed (CAN_MERGE evaluation, merge offer/execution, local workspace restoration via <code>git checkout main && git pull</code>, and branch cleanup). Calling `attempt_completion` prematurely is strictly forbidden.</item>
+      <item>Offer the user the choice to merge the PR or leave it open for maintainer review without pre-evaluating permissions.</item>
+      <item>If user chooses to merge, attempt the merge directly. If the merge fails, report the error plainly, never claim false success, do not retry automatically, and proceed to workspace restoration.</item>
+      <item>Execute Phase 6 post-merge cleanup: return local workspace to main via <code>git checkout main && git pull</code> and delete feature branch upon successful merge (or keep remote branch intact if merge failed or was skipped).</item>
+      <item>Task completion is strictly invalid until Phase 6 is fully executed (merge offer/execution, local workspace restoration via <code>git checkout main && git pull</code>, and cleanup). Calling `attempt_completion` prematurely is strictly forbidden.</item>
     </category>
   </quality_checklist>
 </best_practices>
