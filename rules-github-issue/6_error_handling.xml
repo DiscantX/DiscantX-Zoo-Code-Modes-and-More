@@ -13,8 +13,8 @@
       <solution>Propose no label in the draft. Do NOT attempt to create new repository-wide labels via API.</solution>
     </scenario>
     <scenario>
-      <situation>Duplicate issue found during search</situation>
-      <solution>Present the existing issue URL to the user and ask whether to link, close as duplicate / comment, or override.</solution>
+      <situation>Attempted issue creation or downstream code work after user selected "Link" or "Close/comment as duplicate"</situation>
+      <solution>Block execution immediately. Neither selection creates a new issue or initiates code work. Action is strictly limited to posting one comment on the matched existing issue (plus optional closure for open matched issue under duplicate path), and stopping immediately.</solution>
     </scenario>
     <scenario>
       <situation>Attempted duplicate override without Gate #1 review</situation>

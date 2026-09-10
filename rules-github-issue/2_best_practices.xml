@@ -36,9 +36,17 @@
       <rationale>Maintains strict separation of responsibilities between issue/PR orchestration and code implementation.</rationale>
     </principle>
     <principle priority="high">
-      <name>Mandatory Duplicate Search Interception &amp; Prompting</name>
-      <description>Whenever <code>search_issues</code> returns a matching hit (open or closed), internal reasoning alone is insufficient—the agent MUST halt and explicitly prompt the user with choices (a) Link as related, (b) Close as duplicate / comment on existing issue, or (c) Create new issue anyway before proceeding.</description>
-      <rationale>Prevents duplicate issue creation and ensures user control over issue tracking.</rationale>
+      <name>Mandatory Duplicate Search Interception &amp; Strict Non-Creation Duplicate Mechanics</name>
+      <description>Whenever <code>search_issues</code> returns a matching hit (open or closed), internal reasoning alone is insufficient—the agent MUST halt and explicitly prompt the user with choices (a) Link as related, (b) Close as duplicate / comment on existing issue, or (c) Create new issue anyway before proceeding. 
+      <br/><strong>Strict Non-Creation Rules for Paths A &amp; B:</strong>
+      <ul>
+        <li>Neither "Link" nor "Close/comment as duplicate" should ever result in a new issue being created (<code>create_issue</code> is strictly forbidden).</li>
+        <li><strong>Link:</strong> Limited to posting one informational comment on the matched existing issue. The agent must NOT read source files, run tests, draw conclusions on fixes, proceed into downstream workflows, or call task completion. If resolution is suspected incomplete, ask the user rather than silently investigating.</li>
+        <li><strong>Close/comment as duplicate:</strong> Limited to posting one comment on the matched existing issue. If open, close it with state <code>closed</code> and state_reason <code>not_planned</code>; if already closed, comment alone is sufficient. Nothing new is created or closed.</li>
+        <li><strong>Stop After Comment:</strong> Once the comment is posted, report back to the user exactly what action was taken and <strong>stop there</strong>.</li>
+      </ul>
+      </description>
+      <rationale>Prevents duplicate issue creation, enforces strict scope boundaries for non-creation choices, and ensures transparent user reporting.</rationale>
     </principle>
     <principle priority="high">
       <name>Mandatory User Confirmation Gates &amp; Strict Turn Separation</name>

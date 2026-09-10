@@ -122,4 +122,57 @@
       Identified stale branches, presented specific proposed deletions to the user, and obtained explicit confirmation before executing destructive branch deletions.
     </completion>
   </example>
+
+  <example name="duplicate_resolution_link_path">
+    <scenario>
+      User submits a bug report; duplicate search finds existing open issue #50. Agent halts and asks user. User selects "Link the new report to the existing issue".
+    </scenario>
+
+    <workflow>
+      <step number="1">
+        <description>Perform duplicate search via `search_issues` and detect matching open issue #50.</description>
+      </step>
+      <step number="2">
+        <description>Present choices via `ask_followup_question` (Link, Close/comment as duplicate, Create new issue anyway) and halt.</description>
+      </step>
+      <step number="3">
+        <description>User selects "Link the new report to the existing issue".</description>
+      </step>
+      <step number="4">
+        <description>Enforce non-creation rule: do NOT call `create_issue`. Post exactly one informational comment on issue #50 noting that an additional report describing the same problem was received. Do NOT read source files, run tests, or proceed into downstream workflow phases.</description>
+      </step>
+      <step number="5">
+        <description>Report back to the user exactly what action was taken (comment posted on issue #50) and stop immediately.</description>
+      </step>
+    </workflow>
+
+    <completion>
+      Posted informational link comment on existing issue #50. No new issue was created, and execution stopped immediately without entering code work or verification phases.
+    </completion>
+  </example>
+
+  <example name="duplicate_resolution_close_comment_path">
+    <scenario>
+      User submits a bug report; duplicate search finds open issue #60. Agent halts and asks user. User selects "Close/comment as a duplicate".
+    </scenario>
+
+    <workflow>
+      <step number="1">
+        <description>Perform duplicate search and detect matching open issue #60.</description>
+      </step>
+      <step number="2">
+        <description>Present choices via `ask_followup_question` and halt.</description>
+      </step>
+      <step number="3">
+        <description>User selects "Close/comment as a duplicate".</description>
+      </step>
+      <step number="4">
+        <description>Enforce non-creation rule: do NOT call `create_issue`. Post one comment on matched issue #60 referencing that another report of the same problem was consolidated into it, and update issue #60 to state `closed` with state_reason `not_planned` (since it is open). Stop immediately.</description>
+      </step>
+    </workflow>
+
+    <completion>
+      Posted duplicate consolidation comment on open issue #60 and updated issue state to closed (not planned). No new issue was created, and execution stopped immediately.
+    </completion>
+  </example>
 </complete_examples>

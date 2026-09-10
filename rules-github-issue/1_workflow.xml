@@ -42,8 +42,35 @@
           <strong>CRITICAL RULE:</strong> Do not proceed past this step until the user responds in a subsequent turn. The agent's own conclusion about which option is correct is never sufficient on its own.
         </step>
         <step>
+          <strong>Strict Duplicate Resolution Mechanics &amp; Non-Creation Paths:</strong>
+          Issue creation is reserved exclusively for the "create new issue anyway" path. If the user selects either "Link" or "Close/comment as a duplicate", the agent <strong>MUST NOT</strong> call the issue-creation tool (<code>create_issue</code>) under any circumstance, even transiently.
+          <ul>
+            <li>
+              <strong>Path A: Link the new report to the existing issue:</strong>
+              The required action is strictly limited to posting <strong>one informational comment</strong> on the matched existing issue, noting that an additional report describing the same problem was received.
+              <br/>The agent must <strong>NOT</strong>:
+              <ul>
+                <li>Read or inspect relevant source files</li>
+                <li>Run the project's test suite or any verification steps</li>
+                <li>Draw conclusions about whether the underlying problem is already fixed</li>
+                <li>Proceed into fix-authorization, diff review, or any downstream workflow phase</li>
+                <li>Call task completion in a way that implies verification or code work occurred</li>
+              </ul>
+              If the agent has independent reason to suspect the matched issue's resolution is incomplete, it must state so plainly to the user and ask whether further investigation is wanted — it must not silently investigate and decide on its own.
+            </li>
+            <li>
+              <strong>Path B: Close/comment as a duplicate:</strong>
+              The required action is limited to posting <strong>one comment</strong> on the matched existing issue referencing that another report of the same problem was consolidated into it. If the matched issue is open, close it with platform state <code>closed</code> and state_reason <code>not_planned</code>. If the matched issue is already closed, no state change is needed — the comment alone is sufficient. This choice must not trigger creation of a new issue followed by closing it; there is nothing new to close.
+            </li>
+            <li>
+              <strong>Stop After Comment:</strong>
+              Once the comment (and optional closure for open matched issue) is posted under either Path A or Path B, the agent <strong>MUST REPORT BACK TO THE USER</strong> exactly what action was taken (which existing issue was commented on, and the comment text) and <strong>STOP THERE</strong>. It must not continue into any phase that assumes a new issue or code change is in progress.
+            </li>
+          </ul>
+        </step>
+        <step>
           <strong>MANDATORY DUPLICATE OVERRIDE RULE:</strong>
-          Even if the user explicitly selects "Create new issue anyway" (override), this choice does <strong>NOT</strong> bypass Gate #1. The agent MUST proceed to the separate issue-drafting step.
+          If and only if the user explicitly selects "Create new issue anyway" (override), this choice does <strong>NOT</strong> bypass Gate #1. The agent MUST proceed to the separate issue-drafting step.
         </step>
       </steps>
     </phase>
