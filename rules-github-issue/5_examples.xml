@@ -12,7 +12,7 @@
         <description><strong>Step 1 (Duplicate Search):</strong> Search existing issues for duplicates (open or closed, including resolved by merged PRs) using <code>search_issues</code>; none found.</description>
       </step>
       <step number="3">
-        <description><strong>Step 2 (Issue Drafting):</strong> Retrieve repo owner and name via <code>git config --get remote.origin.url</code>. Retrieve repo labels (first issue draft of session) and semantically match bug to existing label <code>bug</code>. Draft public issue.</description>
+        <description><strong>Step 2 (Issue Drafting):</strong> Retrieve repo owner and name via <code>git config --get remote.origin.url</code>. Retrieve repo labels once per session via multi-tier pipeline (CLI -> REST API -> list_issues fallback) and semantically match the issue context to a primary label <code>bug</code> and secondary contextual label <code>ui</code>. Draft public issue.</description>
       </step>
       <step number="4">
         <description><strong>Hard Stop Gate #1:</strong> Present drafted issue Markdown with proposed label <code>bug</code> to the user and halt execution. Do NOT call <code>create_issue</code> in the same turn.</description>
@@ -52,7 +52,7 @@
         <description><strong>Step 1 (Duplicate Search):</strong> Search existing issues for duplicates (open or closed, including resolved by merged PRs) using <code>search_issues</code>; none found.</description>
       </step>
       <step number="3">
-        <description><strong>Step 2 (Issue Drafting):</strong> Retrieve existing repo labels (reused from session cache or queried once) and semantically match feature request to existing label <code>enhancement</code>. Draft public issue.</description>
+        <description><strong>Step 2 (Issue Drafting):</strong> Retrieve existing repo labels once per session via multi-tier pipeline. Finding no match for user request's specific UI components, draft a proposed new label <code>navigation</code> (with color and description) in addition to matching the existing <code>enhancement</code> label. Draft public issue.</description>
       </step>
       <step number="4">
         <description><strong>Hard Stop Gate #1:</strong> Present drafted feature issue Markdown (Summary, Motivation, Proposed Implementation) with proposed label <code>enhancement</code> and halt execution for user confirmation.</description>

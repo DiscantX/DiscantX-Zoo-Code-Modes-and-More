@@ -16,18 +16,25 @@
     <description>Retrieve existing repo labels once per session and match semantically</description>
     <code language="text">
 1. When preparing first issue draft of session:
-   - Call list_issues or repo label query to get existing repository labels.
-   - Cache label list in memory for the duration of the session.
-2. Match issue type semantically:
-   - Bug -> match against "bug", "type: bug", "defect", "kind/bug", etc.
-   - Feature/Enhancement -> match against "enhancement", "feature", "type: feature", etc.
-   - Task/Chore -> match against "task", "chore", "refactor", etc.
-3. Outcome:
-   - If match found -> propose matched label in draft presented at Gate #1.
-   - If no reasonable match -> propose no label (never create a new repo label).
+   - Call Multi-Tier Label Discovery Pipeline:
+     a) Primary: gh label list --json name,description
+     b) Secondary: GET https://api.github.com/repos/{owner}/{repo}/labels (via curl or Invoke-RestMethod)
+     c) Tertiary Fallback: Fetch labels from first page (30 recent issues) of list_issues.
+   - Cache name and description dictionary in memory for session reuse.
+2. Match both Primary Type and Contextual Topics:
+   - Primary Type Label matching:
+     * Bug -> match "bug", "type: bug", "defect", "kind/bug", etc.
+     * Feature/Enhancement -> match "enhancement", "feature", "type: feature", etc.
+     * Task/Chore -> match "task", "chore", "refactor", "chore/maintenance", etc.
+   - Contextual Domain Label matching (accessibility, ui, documentation, help wanted, good first issue, etc.) using descriptions to find the best semantic fit.
+3. Propose New Labels if Missing:
+   - If no matching label is found for a relevant category, draft a proposed new label structure:
+     * Suggest: name, color, description.
+     * Present suggestions to user at Hard Stop Gate #1.
+     * Create approved labels via `gh label create` or POST REST API before creating the issue.
     </code>
     <explanation>
-      Reuses existing repo taxonomy without polluting the repository with new labels.
+      Enables highly flexible and error-resilient semantic matches by reading descriptions, while offering safe, user-approved additions to the label taxonomy.
     </explanation>
   </pattern>
 

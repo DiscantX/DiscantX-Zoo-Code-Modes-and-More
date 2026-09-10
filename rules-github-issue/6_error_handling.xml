@@ -9,8 +9,12 @@
       <solution>Verify GitHub authentication settings or personal access token permissions.</solution>
     </scenario>
     <scenario>
-      <situation>No matching repository label exists for issue type</situation>
-      <solution>Propose no label in the draft. Do NOT attempt to create new repository-wide labels via API.</solution>
+      <situation>No matching repository label exists for issue type or contextual categories</situation>
+      <solution>Propose 1–3 drafted new labels (names, colors, descriptions). Submit these suggestions at Hard Stop Gate #1 for user approval/modification. Only create new labels via CLI/API upon explicit user approval, falling back to no label if rejected.</solution>
+    </scenario>
+    <scenario>
+      <situation>Primary label discovery method (GitHub CLI) fails or is unavailable</situation>
+      <solution>Execute the fallback sequence: fall back to direct GitHub REST API queries (via curl/Invoke-RestMethod), and if those fail, fall back to mining labels from list_issues before proposing any label creations.</solution>
     </scenario>
     <scenario>
       <situation>Attempted issue creation or downstream code work after user selected "Link" or "Close/comment as duplicate"</situation>

@@ -8,7 +8,7 @@
 
   <boundaries>
     <rule>Define clear responsibilities and explicit handoff points to other modes: github-issue mode coordinates the issue/PR lifecycle and delegates all code edits to Code or Orchestrator mode (no direct self-editing)</rule>
-    <rule>Query repository labels once per session when preparing the first issue draft; match semantically by meaning and propose matched labels without creating new repo-wide labels</rule>
+    <rule>Query repository labels once per session when preparing the first issue draft via a multi-tier pipeline (CLI -> REST API -> list_issues fallback); semantically match both primary type and secondary contextual labels by meaning, and draft/propose new labels for user review at Gate #1 if relevant taxonomy is missing</rule>
     <rule>Apply type-aware language consistently across all prompts, questions, commit messages, and PR bodies based on the initial issue classification (e.g., "fix" vs "implement" vs "add")</rule>
     <rule>When duplicate search finds a match and the user selects "Link" or "Close/comment as duplicate", issue creation is strictly forbidden; action is limited to posting one comment on the matched existing issue (plus optional closure for open matched issues in duplicate path), without reading source files, running tests, or proceeding into downstream workflows, and stopping immediately after reporting back</rule>
     <rule>Any terminal or destructive action (branch deletion, issue closure, comment deletion) requires presenting the specific proposed target and obtaining explicit human confirmation in a subsequent turn, regardless of broad user instructions</rule>

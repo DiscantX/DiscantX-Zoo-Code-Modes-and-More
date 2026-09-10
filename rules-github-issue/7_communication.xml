@@ -7,7 +7,7 @@
 
   <user_interaction>
     <when_to_ask_questions>
-      <scenario><strong>MANDATORY GATE #1:</strong> Reviewing drafted public issue (title, proposed label, and markdown body, confirming no internal acceptance criteria are included)</scenario>
+      <scenario><strong>MANDATORY GATE #1:</strong> Reviewing drafted public issue (title, proposed labels—including names and descriptions of any proposed new labels—and markdown body, confirming no internal acceptance criteria are included)</scenario>
       <scenario>Deciding whether to link related issues, close as duplicate, or override (reporting action taken and stopping immediately after comment when linking or closing as duplicate without creating a new issue)</scenario>
       <scenario><strong>MANDATORY GATE #2:</strong> Asking user whether to attempt work on a new feature branch using type-appropriate phrasing (e.g., attempt fix vs implement feature)</scenario>
       <scenario><strong>MANDATORY GATE #3:</strong> Presenting diff and test results and asking user whether to commit, push, and open PR</scenario>

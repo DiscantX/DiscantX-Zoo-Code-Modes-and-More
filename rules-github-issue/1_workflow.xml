@@ -83,11 +83,21 @@
           Begin drafting the public issue only after the duplicate decision (if any) is fully resolved—whether no duplicate was found during duplicate search, or the user explicitly chose "create new issue anyway".
         </step>
         <step>
-          <strong>Once-Per-Session Label Retrieval &amp; Semantic Matching:</strong>
-          When preparing the first issue draft of a session, retrieve the repository's existing label list via GitHub MCP tools (cache/reuse for subsequent issues in the same session). Semantically match the classified issue type (bug, feature request, task, etc.) against the existing labels by meaning rather than exact string (e.g., matching "bug" vs "type: bug" vs "defect", or "enhancement" vs "feature").
+          <strong>Once-Per-Session Label Retrieval & Multi-Label Semantic Matching:</strong>
+          When preparing the first issue draft of a session, retrieve the repository's label list (cache/reuse across subsequent drafts in the same session) using a multi-tier pipeline:
+          <ol>
+            <li><strong>Primary:</strong> Execute <code>gh label list --json name,description</code> via <code>execute_command</code>.</li>
+            <li><strong>Secondary:</strong> Query GitHub REST API (<code>GET /repos/{owner}/{repo}/labels</code>) using terminal HTTP utilities (e.g. <code>curl</code> or PowerShell <code>Invoke-RestMethod</code>).</li>
+            <li><strong>Tertiary Fallback:</strong> Extract labels from the first page (30 recent issues) fetched via GitHub MCP <code>list_issues</code>.</li>
+          </ol>
+          Semantically match the issue context against existing labels by meaning rather than exact string. Perform multi-label matching covering both:
           <ul>
-            <li>If a reasonable semantic match exists, include the matched label as part of the drafted issue for user review.</li>
-            <li>If no reasonable match exists, propose no label. <strong>NEVER</strong> create a new repository-wide label as a side effect of drafting an issue.</li>
+            <li><strong>Primary Type Label:</strong> Issue type classification (e.g. <code>bug</code>, <code>enhancement</code>, <code>task</code>).</li>
+            <li><strong>Secondary / Contextual Labels:</strong> Domain or topic context (e.g. <code>accessibility</code>, <code>documentation</code>, <code>good first issue</code>, <code>help wanted</code>, <code>ui</code>).</li>
+          </ul>
+          <ul>
+            <li>If reasonable semantic matches exist, include all matched labels as part of the drafted issue for user review.</li>
+            <li>If no existing label matches a relevant category or type, draft 1–3 proposed new labels complete with <code>name</code>, <code>color</code>, and <code>description</code> to present to the user at Hard Stop Gate #1. <strong>NEVER</strong> create new repository-wide labels without explicit user approval at Gate #1.</li>
           </ul>
         </step>
         <step>
@@ -101,18 +111,18 @@
         </step>
         <step>Store Acceptance Criteria internally in your private memory/scratchpad for later verification.</step>
         <step>
-          <strong>MANDATORY HARD STOP GATE #1 (STRICT ISOLATION &amp; TURN SEPARATION):</strong>
-          Display the complete drafted issue (Title, Proposed Labels, and Body Markdown) to the user and invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve and create issue", "Request edits to draft", "Cancel"]</code>.
-          <strong>CRITICAL RULE:</strong> The execution agent is <strong>STRICTLY PROHIBITED</strong> from calling the <code>create_issue</code> MCP tool in the same reasoning turn it generates or revises the issue draft. You MUST present the draft (including proposed label), invoke <code>ask_followup_question</code>, and halt execution until the user responds in a subsequent turn. Treating "I have decided this is correct" as authorization without an explicit response captured from the user is a fatal protocol violation.
-        </step>
-      </steps>
-    </phase>
-    
-    <phase name="issue_creation">
-      <description>Create issue on GitHub with conditional assignment</description>
-      <steps>
-        <step>Upon explicit user approval at Hard Stop Gate #1, call GitHub MCP <code>create_issue</code> tool with the approved title, clean public description (Summary, Steps/Context, Expected/Actual or Desired Behavior), and matched labels (if any).</step>
-        <step>
+          <step>
+            <strong>MANDATORY HARD STOP GATE #1 (STRICT ISOLATION & TURN SEPARATION):</strong>
+            Display the complete drafted issue (Title, Proposed Labels—including any newly proposed labels with names and descriptions—and Body Markdown) to the user and invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve draft and create issue (including proposed labels)", "Request edits to draft or labels", "Cancel"]</code>.
+            <strong>CRITICAL RULE:</strong> The execution agent is <strong>STRICTLY PROHIBITED</strong> from calling the <code>create_issue</code> MCP tool in the same reasoning turn it generates or revises the issue draft. You MUST present the draft (including proposed labels), invoke <code>ask_followup_question</code>, and halt execution until the user responds in a subsequent turn. Treating "I have decided this is correct" as authorization without an explicit response captured from the user is a fatal protocol violation.
+          </step>
+        </steps>
+      </phase>
+      
+      <phase name="issue_creation">
+        <description>Create issue on GitHub with conditional assignment</description>
+        <steps>
+          <step>Upon explicit user approval at Hard Stop Gate #1, if new repository labels were proposed and approved, create them first via CLI (<code>gh label create <name> --description "<desc>" --color "<color>"</code>) or REST API POST, then call GitHub MCP <code>create_issue</code> tool with the approved title, clean public description (Summary, Steps/Context, Expected/Actual or Desired Behavior), and approved labels.</step>
           Record the created issue number, title, and HTML URL. Ensure the issue remains OPEN unless explicitly closed via a defined closure path.
           <strong>STRICT PROHIBITION (NO SPECULATIVE/UNAPPROVED API CLOSURE):</strong> Never call <code>github.update_issue</code> to set <code>"state": "closed"</code> speculatively or optimistically. Issue closure must only occur via the automated GitHub native PR merge webhook path or the formalized manual closure gate.
         </step>
@@ -269,7 +279,7 @@
   </main_workflow>
   
   <completion_criteria>
-    <criterion>Repository labels queried once per session at first issue draft; type semantically matched against existing labels without creating new labels</criterion>
+    <criterion>Repository labels queried once per session at first issue draft via multi-tier pipeline (CLI -> REST API -> list_issues fallback); primary and secondary types semantically matched, and new label proposals presented for user confirmation at Gate #1</criterion>
     <criterion>Issue drafted and copyedited into GitHub Markdown without leaking internal acceptance criteria; type-aware language applied across all phases and interactions</criterion>
     <criterion>User explicitly confirmed issue draft (including proposed label) before GitHub creation (Hard Stop Gate #1 enforced without same-turn tool invocation, even on duplicate overrides)</criterion>
     <criterion>STAKEHOLDER_USERNAME resolved lazily and assigned ONLY if issue is left open without immediate action (with unified fallback if unset or search yields no match)</criterion>
