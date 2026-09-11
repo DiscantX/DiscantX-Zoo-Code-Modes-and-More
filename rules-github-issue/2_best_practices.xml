@@ -6,9 +6,14 @@
       <rationale>Keeps public issues clean for third parties while giving Roo precise validation criteria and honoring explicit user customization requests.</rationale>
     </principle>
     <principle priority="high">
-      <name>Once-Per-Session Label Retrieval & Multi-Label Semantic Matching</name>
-      <description>When preparing the first issue draft of a session, retrieve the repository's existing label list once (cache and reuse across subsequent drafts in the same session; do not query at initialization) via a multi-tier pipeline (GitHub CLI -> direct REST API -> issue mining fallback). Semantically match both the primary issue type (bug, enhancement, task) and secondary contextual topics (accessibility, documentation, UI, etc.) against existing labels by meaning. If reasonable matches exist, propose them in the draft for user review at Gate #1. If no matching label is found for a relevant category, draft 1–3 proposed new labels (complete with names, descriptions, and colors) and present them to the user for approval. Never create repository-wide labels without explicit user approval at Gate #1.</description>
-      <rationale>Respects and leverages existing repository taxonomy while enabling safe, user-approved extensions of the label library when gaps are identified.</rationale>
+      <name>Once-Per-Session Label Retrieval & Multi-Label Semantic Matching with Per-Category Budgets</name>
+      <description>When preparing the first issue draft of a session, retrieve the repository's existing label list once (cache and reuse across subsequent drafts in the same session; do not query at initialization) via a multi-tier pipeline (GitHub CLI -> direct REST API -> issue mining fallback). Semantically match both the primary issue type (bug, enhancement, task) and secondary contextual topics (accessibility, documentation, UI, etc.) against existing labels by meaning. If reasonable matches exist, propose them in the draft for user review at Gate #1. If no matching label is found for a relevant category, draft up to 3 proposed new labels for the primary type category (if missing) and independently up to 3 proposed new labels for secondary/contextual categories (a per-category budget of 1–3 each, rather than one combined pool across both), complete with names, descriptions, and colors. Never create repository-wide labels without explicit user approval at Gate #1.</description>
+      <rationale>Respects and leverages existing repository taxonomy while enabling safe, user-approved extensions of the label library with clear per-category caps.</rationale>
+    </principle>
+    <principle priority="high">
+      <name>Mandatory Repo-Scoped Duplicate Search</name>
+      <description>Whenever executing <code>search_issues</code>, the query MUST always be scoped explicitly to the current repository using the owner and repo parsed from <code>git config --get remote.origin.url</code> (structured as <code>repo:{owner}/{repo} {keywords}</code>), rather than searching globally across all public repositories.</description>
+      <rationale>Prevents noise from unrelated external repositories and ensures search relevance.</rationale>
     </principle>
     <principle priority="high">
       <name>Type-Aware Language Across the Issue Lifecycle</name>
@@ -49,9 +54,9 @@
       <rationale>Prevents duplicate issue creation, enforces strict scope boundaries for non-creation choices, and ensures transparent user reporting.</rationale>
     </principle>
     <principle priority="high">
-      <name>Mandatory User Confirmation Gates &amp; Strict Turn Separation</name>
-      <description>Always pause and ask the user before attempting work (Gate #2) and before committing, pushing, or opening PRs (Hard Stop Gate #3). Furthermore, generating drafts or reviews and issuing tool calls must never happen in the same reasoning turn; the agent must halt and wait for explicit human response in a subsequent turn. Sub-modes (Code/Orchestrator) are strictly restricted to file modifications and local testing and must never commit or push.</description>
-      <rationale>Ensures human-in-the-loop control over code modifications, verifies intent, and prevents implicit gate bypassing.</rationale>
+      <name>Mandatory User Confirmation Gates &amp; Strict Turn Separation (Unconditionally Final Gate Responses)</name>
+      <description>Always pause and ask the user before attempting work (Gate #2) and before committing, pushing, or opening PRs (Hard Stop Gate #3). Furthermore, generating drafts or reviews and issuing tool calls must never happen in the same reasoning turn; the agent must halt and wait for explicit human response in a subsequent turn. Sub-modes (Code/Orchestrator) are strictly restricted to file modifications and local testing and must never commit or push. <br/><strong>Unconditionally Final Gate Responses:</strong> Once a human gives an explicit answer at any approval gate (especially work-authorization at Gate #2), that answer is authoritative and final for the remainder of the task, regardless of how the original task was framed or described before the gate was reached. Earlier scope-setting language, urgency, or phrasing from the initiating request must never be treated as competing with or overriding a live gate response. The agent must not re-ask a gate question it has already received a clear answer to, and should not frame a repeat question as "checking" whether the user "really" meant their answer. If the agent believes there's a genuine mismatch between the original request and the gate outcome worth surfacing, it should state that plainly as an observation to the user rather than reopening the gate.</description>
+      <rationale>Ensures human-in-the-loop control over code modifications, verifies intent, and prevents implicit gate bypassing or nagging users who decline work authorization.</rationale>
     </principle>
     <principle priority="high">
       <name>Formalized Manual Issue Closure &amp; Approval Gate</name>

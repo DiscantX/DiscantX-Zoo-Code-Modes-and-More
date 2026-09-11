@@ -27,8 +27,8 @@
       <description>Step 1: Search for duplicates and perform semantic duplicate analysis before drafting</description>
       <steps>
         <step>
-          <strong>Mandatory Duplicate Search Step:</strong>
-          Query existing GitHub issues using MCP tools (e.g., <code>search_issues</code> or <code>list_issues</code>) to check for matching or related issues (including open issues, closed issues, and issues resolved by a merged pull request).
+          <strong>Mandatory Repo-Scoped Duplicate Search Step:</strong>
+          Query existing GitHub issues using MCP tools (e.g., <code>search_issues</code>) with a query explicitly scoped to the current repository using the owner and repo parsed from <code>git config --get remote.origin.url</code> (structured as <code>repo:{owner}/{repo} {keywords}</code>), rather than searching globally across all public repositories, to check for matching or related issues (including open issues, closed issues, and issues resolved by a merged pull request).
         </step>
         <step>Briefly check the titles and descriptions of top search results and provide a quick, one-sentence recommendation explaining whether each candidate is an actual semantic duplicate or just happens to share keywords.</step>
         <step>
@@ -97,7 +97,7 @@
           </ul>
           <ul>
             <li>If reasonable semantic matches exist, include all matched labels as part of the drafted issue for user review.</li>
-            <li>If no existing label matches a relevant category or type, draft 1–3 proposed new labels complete with <code>name</code>, <code>color</code>, and <code>description</code> to present to the user at Hard Stop Gate #1. <strong>NEVER</strong> create new repository-wide labels without explicit user approval at Gate #1.</li>
+            <li>If no existing label matches a relevant category or type, draft up to 3 proposed new labels for the primary type category (if missing) and independently up to 3 proposed new labels for secondary/contextual categories (a per-category budget of 1–3 each, rather than one combined pool across both), complete with <code>name</code>, <code>color</code>, and <code>description</code> to present to the user at Hard Stop Gate #1. <strong>NEVER</strong> create new repository-wide labels without explicit user approval at Gate #1.</li>
           </ul>
         </step>
         <step>
@@ -133,11 +133,12 @@
       <description>Coordinate fix or implementation on a dedicated feature branch using type-aware language</description>
       <steps>
         <step>
-          <strong>MANDATORY GATE #2 (TYPE-AWARE PROMPT):</strong> Prompt the user using the <code>ask_followup_question</code> tool with type-appropriate choices:
+          <strong>MANDATORY GATE #2 (TYPE-AWARE PROMPT &amp; UNCONDITIONAL FINALITY):</strong> Prompt the user using the <code>ask_followup_question</code> tool with type-appropriate choices:
           <ul>
             <li>For bugs: <code>["Yes, attempt fix on new feature branch", "No, leave issue open without immediate fix"]</code></li>
             <li>For features / tasks: <code>["Yes, implement feature on new feature branch", "No, leave issue open without immediate implementation"]</code></li>
           </ul>
+          <strong>Unconditional Finality Rule:</strong> Once the user declines immediate work authorization at Gate #2, that answer is authoritative and final for the remainder of the task. Initial task framing, urgency, or instructions must never be treated as competing with or overriding the user's live decision. The agent must never re-ask, second-guess, or contest the user's decline.
         </step>
         <step><strong>CONDITIONAL ASSIGNMENT &amp; LAZY IDENTITY RESOLUTION:</strong>
           <ul>
@@ -173,8 +174,9 @@
         <step>Upon return from Code/Orchestrator mode, inspect git diff, test results, and status.</step>
         <step>Verify implementation against your internal Acceptance Criteria checklist.</step>
         <step>
-          <strong>MANDATORY HARD STOP GATE #3 (STRICT TURN SEPARATION):</strong> Present the review (git diff and test output) to the user using type-aware phrasing.
+          <strong>MANDATORY HARD STOP GATE #3 (STRICT TURN SEPARATION &amp; ABORT CLEANUP):</strong> Present the review (git diff and test output) to the user using type-aware phrasing.
           <strong>CRITICAL:</strong> Display the <code>git diff</code> and test execution summary to the user, then invoke the <code>ask_followup_question</code> tool with choices: <code>["Approve commit, push, and open PR", "Request additional changes", "Abort work"]</code>. Explicit user approval via <code>ask_followup_question</code> captured in a prior turn is REQUIRED BEFORE executing <code>git commit</code>, <code>git push</code>, or <code>create_pull_request</code>. Combining diff presentation and tool execution in the same reasoning turn is strictly prohibited. Sub-modes are strictly prohibited from performing these operations.
+          <br/><strong>Pre-Push Abort Branch Cleanup:</strong> If the user selects "Abort work" at Hard Stop Gate #3 <strong>and zero commits were ever made on the feature branch</strong>, restore the local workspace to the default branch and delete the feature branch locally immediately: <code>git checkout main &amp;&amp; git pull &amp;&amp; git branch -d issue-{number}-{short-slug}</code>. Since zero commits were made, no remote branch exists and no data is at risk; this cleanup requires no additional confirmation beyond the abort decision. (Branches with committed work preserved after a failed or skipped merge follow separate retention rules).
         </step>
         <step>
           Upon explicit approval, commit changes on branch <code>issue-{number}-{short-slug}</code> with raw plain-text issue references in the commit message using type-appropriate wording (e.g., <code>Fix issue logic (Fixes #{number})</code> or <code>Implement user auth (Resolves #{number})</code>), including all confirmed open duplicates (e.g., <code>Fixes #11, Fixes #12</code>).
